@@ -1,0 +1,527 @@
+@import "tailwindcss";
+
+/* La documentación del framework contiene ejemplos de clases arbitrarias
+   (url(...), var(...-*)) que el scanner de contenido interpretaría como
+   candidatas reales. Los docs no deben influir en el CSS compilado. */
+@source not "../../Graph-Design-Framework";
+@source not "../../framework-old";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-primary: #a855f7;
+
+  /* Elastic Spacing System */
+  --spacing-frame: 3em; /* Desktop default */
+}
+
+/* Light Mode (Default) */
+:root {
+  --background: #F2F2F0; /* Swiss Light Grey */
+  --foreground: #050505; /* Deep Black */
+  --surface: rgba(0, 0, 0, 0.03);
+  
+  /* Core Spacing Scale (Elastic) */
+  --px-frame: 6em;
+  --section-gap: 8em;
+  --block-gap: 2em;
+  --content-gap: 1em;
+}
+
+/* Dark Mode Overrides */
+.dark {
+  --background: #050505;
+  --foreground: #EDEDED;
+  --surface: rgba(255, 255, 255, 0.03);
+}
+
+/* Theme Inversion Utility - HARD FORCE */
+.theme-invert {
+  /* Default (Light Mode context) -> Be Dark */
+  --background: #050505;
+  --foreground: #EDEDED;
+  --card-bg: #0A0A0A; /* Dark card for Dark Section */
+  --card-shadow: none; /* No shadow for dark cards (cleaner) */
+  
+  /* Redefine Tailwind's internal variables to allow opacity modifiers */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Dark Mode context -> Be Light */
+.dark .theme-invert {
+  --background: #F2F2F0;
+  --foreground: #050505;
+  --card-bg: #FFFFFF; /* Light card for Light Section */
+  --card-shadow: 0 20px 40px -10px rgba(0,0,0,0.04); /* Ultra clean Swiss shadow */
+  
+  /* Redefine Tailwind's internal variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Ensure nested bg-background utilities use the new variable */
+.theme-invert .bg-background {
+  background-color: var(--background) !important;
+}
+.theme-invert .text-foreground {
+  color: var(--foreground) !important;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --px-frame: 0.75em;
+    --section-gap: 3.25em;
+    --block-gap: 1.5em;
+    --content-gap: 0.75em;
+  }
+}
+
+/* Base Styles */
+@layer base {
+  body {
+    @apply bg-background text-foreground font-display antialiased selection:bg-primary/30;
+    overflow-x: clip;
+  }
+}
+
+/* Utility Classes - The Glass Engine */
+@layer utilities {
+  .px-frame {
+    padding-left: var(--px-frame);
+    padding-right: var(--px-frame);
+  }
+
+  .section-gap {
+    padding-top: var(--section-gap);
+    padding-bottom: var(--section-gap);
+  }
+
+  .glass-engine {
+    background: var(--surface);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .text-mono {
+    @apply font-mono text-xs uppercase tracking-[0.2em] opacity-50;
+  }
+  
+  /* Custom Outlines */
+  .text-stroke-cyan {
+    -webkit-text-stroke: 2px #06b6d4;
+  }
+  .text-stroke-pink {
+    -webkit-text-stroke: 2px #ec4899;
+  }
+  .text-stroke-black {
+    -webkit-text-stroke: 2px #000000;
+  }
+}
+
+/* Custom Animations */
+.noise-bg {
+  position: fixed;
+  inset: 0;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ============================================
+   ALTERNATING SPLIT SCROLL - PROJECTS SECTION
+   ============================================ */
+
+/* Master wrapper - contains the scroll track */
+.split-master-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Scroll track - invisible element that controls animation duration */
+.scroll-track {
+  height: 500vh; /* 5 projects × 100vh each */
+  pointer-events: none;
+}
+
+/* Sticky viewport - stays fixed during scroll */
+.split-viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Individual panels - left and right */
+.panel {
+  width: 50vw;
+  height: 100vh;
+  position: relative;
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.panel-left {
+  z-index: 10;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-right {
+  z-index: 20;
+  background: var(--background);
+}
+
+/* Content blocks - each represents one project phase */
+.content-block {
+  height: 100vh;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Project content containers */
+.project-content-left,
+.project-content-right {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Project image container */
+.project-image {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Project info overlay */
+.project-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE BREAKPOINT
+   ============================================ */
+
+@media (max-width: 1023px) {
+  .split-master-wrapper {
+    display: none; /* Hide split scroll on mobile */
+  }
+  
+  .scroll-track {
+    height: auto;
+  }
+  
+  .split-viewport {
+    position: relative;
+    height: auto;
+    flex-direction: column;
+  }
+  
+  .panel {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  
+  .content-block {
+    position: relative;
+    height: auto;
+    min-height: 50vh;
+  }
+  
+  .project-content-left,
+  .project-content-right {
+    position: relative;
+    height: auto;
+    padding: 2rem 0;
+  }
+
+  .project-image {
+    height: 50vh;
+  }
+}
+
+/* ============================================
+   TYPOGRAPHY TOKEN SYSTEM — ANATOMÍA EPICARE × MANROPE/JETBRAINS MONO
+   Migrado desde Graph-Design-Framework (2026-10-20).
+   - Top-level @utility (Tailwind v4): las variantes responsivas y de estado
+     solo se generan así; el CSS plano dentro de la capa utilities no las produce.
+   - Display+Heading: weight 700 en móvil, 600 desde 48rem (mobile-first punch).
+   - El token ya trae tracking y leading: no añadir overrides manuales.
+   ============================================ */
+
+/* Display + Heading → Manrope (heredado del body) */
+
+@utility text-display-3xl {
+  font-size: clamp(6rem, 12vw, 12rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display-2xl {
+  font-size: clamp(4.5rem, 8vw, 8rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display-xl {
+  font-size: clamp(3.5rem, 6vw, 6rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display-lg {
+  font-size: clamp(3rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display {
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display-sm {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-display-xs {
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h1 {
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h2 {
+  font-size: clamp(1.5rem, 2vw, 1.875rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h3 {
+  font-size: clamp(1.25rem, 1.5vw, 1.5rem);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h4 {
+  font-size: clamp(1.1875rem, 1.25vw, 1.25rem);
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h5 {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h6 {
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+@utility text-h7 {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-weight: 700;
+  @media (min-width: 48rem) {
+    font-weight: 600;
+  }
+}
+
+/* Cuerpo · UI → Manrope — text-wrap: pretty (sin viudas en última línea) */
+
+@utility text-subtitle {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  line-height: 1.5;
+  font-weight: 300;
+  text-wrap: pretty;
+}
+
+@utility text-body-2xl {
+  font-size: 1.5rem;
+  line-height: 1.45;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+@utility text-body-xl {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  font-weight: 300;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+
+@utility text-body-lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-weight: 300;
+  text-wrap: pretty;
+}
+
+@utility text-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 300;
+  text-wrap: pretty;
+}
+
+@utility text-body-md {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 300;
+  text-wrap: pretty;
+}
+
+@utility text-body-sm {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  text-wrap: pretty;
+}
+
+@utility text-body-xs {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-wrap: pretty;
+}
+
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-wrap: pretty;
+}
+
+/* Meta · Código → JetBrains Mono */
+
+@utility text-overline {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@utility text-ui-label {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@utility text-data {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility text-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
