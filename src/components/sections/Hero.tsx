@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguage } from "@/context/LanguageContext";
@@ -14,12 +14,132 @@ import {
   Camera
 } from "lucide-react";
 
+const SAT_ICON = {
+  react: Code,
+  nextjs: Cpu,
+  design: Palette,
+  uiux: Layers,
+  motion: Sparkles,
+  backend: Terminal
+} as const;
+
+type SatId = keyof typeof SAT_ICON;
+
+type Side = "top" | "bottom" | "left" | "right" | "top-right" | "bottom-left";
+
+// Lado del que sale la burbuja en desktop, según la geometría de cada pill en
+// su anillo; en móvil se centra sobre el planeta. Si el lado elegido sacaría la
+// burbuja del viewport, measure() lo voltea al opuesto (nada de cortes abajo).
+const CARD_ANCHOR: Record<SatId, Side> = {
+  react: "top",
+  nextjs: "bottom",
+  design: "left",
+  uiux: "right",
+  motion: "top-right",
+  backend: "bottom-left"
+};
+
+// Stem de hairline por lado final: apunta a la pill de origen.
+const SIDE_STEM: Record<Side, string> = {
+  top: "chip-stem-top",
+  bottom: "chip-stem-bottom",
+  left: "chip-stem-left",
+  right: "chip-stem-right",
+  "top-right": "chip-stem-top-right",
+  "bottom-left": "chip-stem-bottom-left"
+};
+
+// Pill del sistema solar: button real (teclado/táctil) y hover que revela.
+// Viaja por offset-path sin rotar sobre su propio eje (offset-rotate: 0deg).
+// A scope de módulo a propósito: definida dentro del componente, cada render
+// creaba un tipo nuevo y React remontaba las pills (su animación CSS reiniciaba
+// y el sistema solar "se detenía" al abrir la chip-card).
+const Satellite = ({ id, icon: Icon, label, orbitClass, open, onToggle }: any) => (
+  <div className={`orbit-pill ${orbitClass}`}>
+    <div className="relative">
+      <button
+        type="button"
+        data-sat={id}
+        aria-expanded={open}
+        aria-label={label}
+        onClick={onToggle}
+        className={`node pointer-events-auto flex cursor-pointer items-center gap-3.5 rounded-full border px-5 py-2.5 transition-[scale,background-color,color,border-color] duration-200 hover:scale-[1.06] ${open ? "scale-[1.06] bg-foreground text-background border-foreground" : "bg-white text-black border-black hover:border-black/40 dark:bg-white/10 dark:text-white/90 dark:border-white/10 md:dark:bg-white/5 md:dark:backdrop-blur-xl dark:hover:border-white/40"}`}
+      >
+        <Icon className="w-3.5 h-3.5 opacity-80 md:w-4 md:h-4" />
+        <span className="text-[11px] font-bold uppercase tracking-[0.15em] whitespace-nowrap opacity-90 md:text-xs">{label}</span>
+      </button>
+    </div>
+  </div>
+);
+
 export default function Hero() {
   const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const planetRef = useRef<HTMLDivElement>(null);
   const systemRef = useRef<HTMLDivElement>(null);
   const imageWrapperRef = useRef<HTMLDivElement>(null);
+  const [openSat, setOpenSat] = useState<SatId | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Escape cierra la chip-card abierta (accesibilidad de teclado).
+  useEffect(() => {
+    if (!openSat) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenSat(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openSat]);
+
+  // La burbuja es efímera: se auto-cierra a los 4s para no quedar clavada.
+  useEffect(() => {
+    if (!openSat) return;
+    const id = window.setTimeout(() => setOpenSat(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [openSat]);
+
+  // La burbuja se posiciona IMPERATIVAMENTE por frame (sin setState): un setState
+  // a 60fps re-renderizaba Hero y remontaba las pills, reiniciando su animación
+  // CSS (el sistema solar "se detenía" al abrir la tarjetita). La pill sigue
+  // viajando; la burbuja la sigue. Clamp al viewport para que nunca se corte.
+  useLayoutEffect(() => {
+    if (!openSat) return;
+    const apply = () => {
+      const btn = document.querySelector<HTMLButtonElement>(`[data-sat="${openSat}"]`);
+      const card = cardRef.current;
+      if (!btn || !card) return;
+      const r = btn.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const cw = card.offsetWidth;
+      const ch = card.offsetHeight;
+      const side = CARD_ANCHOR[openSat];
+      let left: number;
+      let top: number;
+      let transform: string;
+      if (side === "top") { left = r.left + r.width / 2; top = Math.min(r.bottom + 12, vh - 8 - ch); transform = "translate(-50%, 0)"; }
+      else if (side === "bottom") { left = r.left + r.width / 2; top = Math.max(r.top - 12, 8 + ch); transform = "translate(-50%, -100%)"; }
+      else if (side === "left") { left = Math.min(r.right + 12, vw - 8 - cw); top = r.top + r.height / 2; transform = "translate(0, -50%)"; }
+      else if (side === "right") { left = Math.max(r.left - 12, 8 + cw); top = r.top + r.height / 2; transform = "translate(-100%, -50%)"; }
+      else if (side === "top-right") { left = r.right; top = Math.min(r.bottom + 12, vh - 8 - ch); transform = "translate(-100%, 0)"; }
+      else { left = r.left; top = Math.max(r.top - 12, 8 + ch); transform = "translate(0, -100%)"; }
+      card.style.left = `${left}px`;
+      card.style.top = `${top}px`;
+      card.style.transform = transform;
+    };
+    apply();
+    let raf = 0;
+    const loop = () => {
+      apply();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    window.addEventListener("resize", apply);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", apply);
+    };
+  }, [openSat, t]);
 
   // EFECTO 1: INTRO Y SCROLL (Se ejecuta solo una vez al montar)
   useEffect(() => {
@@ -29,9 +149,17 @@ export default function Hero() {
       window.history.scrollRestoration = "manual";
     }
 
-    const ctx = gsap.context(() => {
-      const isMobile = window.innerWidth < 768;
+    let refreshTimer = 0;
+    const isMobile = window.innerWidth < 768;
 
+    // Las órbitas (keyframes CSS) tienen dos puertas de apagado: fuera de
+    // viewport y, en móvil, durante el Acto 1 (capas invisibles rotando =
+    // trabajo de compositor gratuito justo en la ventana de scroll lag).
+    const orbitsState = { offscreen: false, live: !isMobile };
+    const applyOrbits = () =>
+      containerRef.current?.classList.toggle("orbits-paused", orbitsState.offscreen || !orbitsState.live);
+
+    const ctx = gsap.context(() => {
       // 1. Estado Inicial Forzado (Evita flashes)
       gsap.set(".reveal-left", { opacity: 0, xPercent: -100 });
       gsap.set(".reveal-right", { opacity: 0, xPercent: 100 });
@@ -62,8 +190,10 @@ export default function Hero() {
           trigger: containerRef.current,
           start: "top top",
           end: "bottom bottom",
-          scrub: 1.2, // Un poco más de suavidad para estabilidad
-          onEnter: () => { 
+          // Lenis ya suaviza el scroll: scrub numérico añadía un segundo
+          // suavizado (doble lag en móvil). scrub: true = sync exacto.
+          scrub: true,
+          onEnter: () => {
             if (introTl.isActive()) introTl.progress(1).kill();
           },
           onUpdate: (self) => {
@@ -71,102 +201,110 @@ export default function Hero() {
             if (self.progress > 0.01 && introTl.isActive()) {
               introTl.progress(1).kill();
             }
+            // La burbuja es efímera: cierra al volver al Acto 1 o al salir del
+            // track hacia la siguiente sección.
+            if (self.progress < 0.12 || self.progress > 0.9) setOpenSat((cur) => (cur ? null : cur));
+            if (isMobile) {
+              const live = self.progress > 0.3;
+              if (live !== orbitsState.live) {
+                orbitsState.live = live;
+                applyOrbits();
+              }
+            }
           }
         }
       });
 
-      // Usamos .to() en lugar de .fromTo() para que herede el estado final de la intro
+      // Usamos .to() en lugar de .fromTo() para que herede el estado final de la intro.
+      // Sin `scale` en las líneas: en desktop el objetivo era 1 (no-op) y en móvil
+      // escalar texto gigante con stroke fuerza re-raster de 6 capas por frame
+      // (scroll lag real en dispositivo; headless no lo reproduce).
       scrollTl
-        .to(".reveal-left", { xPercent: isMobile ? -60 : -150, opacity: 0, scale: isMobile ? 0.85 : 1, ease: "none" }, 0)
-        .to(".reveal-right", { xPercent: isMobile ? 60 : 150, opacity: 0, scale: isMobile ? 0.85 : 1, ease: "none" }, 0)
-        .to(".reveal-center", { xPercent: isMobile ? -60 : -150, opacity: 0, scale: isMobile ? 0.85 : 1, ease: "none" }, 0)
-        .to(imageWrapperRef.current, { 
-          left: isMobile ? "14px" : "2em", 
-          bottom: isMobile ? "14vh" : "2em", 
-          top: isMobile ? "auto" : "2em", 
-          x: 0, 
-          y: isMobile ? 40 : 0, 
-          height: isMobile ? "28vh" : "calc(100vh - 4em)", 
-          width: isMobile ? "60vw" : "calc(40vw - 2em)", 
-          borderRadius: "24px", 
-          opacity: isMobile ? 0 : 1, 
-          scale: isMobile ? 0.9 : 1, 
-          clipPath: isMobile ? "inset(50% 0% 50% 0%)" : "inset(0% 0% 0% 0%)", 
-          ease: "power2.inOut",
-          zIndex: 40 
-        }, 0)
-        .to(".image-inner-container", { borderRadius: "24px", ease: "power2.inOut" }, 0)
+        .to(".reveal-left", { xPercent: isMobile ? -60 : -150, opacity: 0, ease: "none" }, 0)
+        .to(".reveal-right", { xPercent: isMobile ? 60 : 150, opacity: 0, ease: "none" }, 0)
+        .to(".reveal-center", { xPercent: isMobile ? -60 : -150, opacity: 0, ease: "none" }, 0);
+
+      // La imagen: en desktop conserva su geometría aprobada (crece 16vw→40vw).
+      // En móvil terminaba invisible de todos modos, así que su recorrido de
+      // left/bottom/width/height/clipPath (layout+paint por frame) se degrada
+      // a transform/opacity — mismo destino, cero repaint (Hardware Symphony §2).
+      if (isMobile) {
+        scrollTl.to(imageWrapperRef.current, { x: 0, y: 40, scale: 0.9, opacity: 0, ease: "power2.inOut", zIndex: 40 }, 0);
+      } else {
+        scrollTl
+          .to(imageWrapperRef.current, {
+            left: "2em",
+            bottom: "2em",
+            top: "2em",
+            x: 0,
+            y: 0,
+            height: "calc(100vh - 4em)",
+            width: "calc(40vw - 2em)",
+            borderRadius: "24px",
+            opacity: 1,
+            scale: 1,
+            clipPath: "inset(0% 0% 0% 0%)",
+            ease: "power2.inOut",
+            zIndex: 40
+          }, 0)
+          .to(".image-inner-container", { borderRadius: "24px", ease: "power2.inOut" }, 0);
+      }
+
+      scrollTl
         .to(systemRef.current, { x: isMobile ? 0 : "20vw", opacity: 1, ease: "power2.inOut" }, 0)
         .to(planetRef.current, { scale: isMobile ? 0.7 : 1.15, opacity: 1, ease: "power2.inOut" }, 0.1) 
-        .to(".orbit-ring", { scale: isMobile ? 0.6 : 1, opacity: 0.6, stagger: 0.05, ease: "power2.inOut" }, 0.1)
+        .to(".orbit-ring", { scale: isMobile ? 0.6 : 0.8, opacity: 0.6, stagger: 0.05, ease: "power2.inOut" }, 0.1)
         .to(".hero-detail", { opacity: 0, y: 50, ease: "none" }, 0);
 
       // Sincronización final
       ScrollTrigger.refresh();
 
-      setTimeout(() => { ScrollTrigger.refresh(); }, 100);
+      refreshTimer = window.setTimeout(() => { ScrollTrigger.refresh(); }, 100);
     }, containerRef);
 
+    applyOrbits();
+    const orbitsIO = new IntersectionObserver(
+      ([entry]) => {
+        orbitsState.offscreen = !entry.isIntersecting;
+        applyOrbits();
+        if (!entry.isIntersecting) setOpenSat(null);
+      },
+      { threshold: 0 }
+    );
+    if (containerRef.current) orbitsIO.observe(containerRef.current);
+
     return () => {
+      window.clearTimeout(refreshTimer);
+      orbitsIO.disconnect();
+      containerRef.current?.classList.remove("orbits-paused");
       ctx.revert();
-      ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
 
-  // EFECTO 2: ÓRBITAS (Giro infinito y sincronizado)
-  useEffect(() => {
-    const orbitCtx = gsap.context(() => {
-      [1, 2, 3].forEach(i => {
-        const rotationValue = i % 2 === 0 ? -360 : 360;
-        const duration = 25 + (i * 10);
-        
-        // Animación de Órbita (Anillo Padre)
-        gsap.to(`.orbit-${i}`, {
-          rotation: rotationValue,
-          duration: duration,
-          repeat: -1,
-          ease: "none",
-          force3D: true,
-          onUpdate: function() {
-            // Sincronización forzada: el hijo siempre tiene la rotación opuesta al padre en tiempo real
-            const currentRotation = gsap.getProperty(this.targets()[0], "rotation");
-            gsap.set(`.node-${i}`, { rotation: -Number(currentRotation) });
-          }
-        });
-      });
-    }, containerRef);
-
-    return () => orbitCtx.revert();
-  }, []); // Quitamos [t] para evitar desincronización al cambiar idioma
+  // EFECTO 2: ÓRBITAS — el giro vive en keyframes CSS (globals.css); las puertas
+  // de apagado (fuera de viewport + Acto 1 en móvil) están en el EFECTO 1.
 
   const typographySize = "text-[clamp(2.5rem,10.5vw,9.6rem)]";
 
-  const Satellite = ({ icon: Icon, label, className, nodeClass }: any) => (
-    <div className={`absolute ${className} will-change-transform`}>
-      <div className={`${nodeClass} will-change-transform`}>
-        <div className="node flex items-center gap-3.5 px-5 md:px-5 py-2.5 md:py-2.5 rounded-full border bg-white border-black text-black dark:bg-white/5 dark:border-white/10 dark:text-white/90 dark:backdrop-blur-xl">
-          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-80" />
-          <span className="text-[11px] md:text-xs font-bold tracking-[0.15em] uppercase whitespace-nowrap opacity-90">{label}</span>
-        </div>
-      </div>
-    </div>
-  );
+  const toggleSat = (id: SatId) => setOpenSat((cur) => (cur === id ? null : id));
+
+  const OpenIcon = openSat ? SAT_ICON[openSat] : null;
 
   return (
     <div ref={containerRef} className="relative w-full h-[300vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col bg-[#F2F2F0] dark:bg-[#050505]">
-        <div className="relative z-10 flex flex-col justify-center gap-2 md:gap-[12px] w-full leading-[0.82] pointer-events-none px-[14px] md:px-[7em] h-[60vh] md:h-screen pt-10 md:pt-0 will-change-[transform,opacity]">
+        <div className="relative z-10 flex flex-col justify-center gap-2 md:gap-[12px] w-full leading-[0.82] pointer-events-none px-[14px] md:px-[7em] h-[60vh] md:h-screen pt-10 md:pt-0">
           <div className="w-full text-left"><div className="reveal-left opacity-0 inline-block"><h1 className={`${typographySize} font-black tracking-tighter uppercase text-black dark:text-transparent dark:[-webkit-text-stroke:2px_#06b6d4] opacity-100 dark:opacity-40 whitespace-nowrap`}>{t.hero.firstName}</h1></div></div>
           <div className="w-full text-right relative">
             <div className="reveal-right opacity-0 inline-block relative group">
               <h1 className={`${typographySize} font-black tracking-tighter uppercase relative z-10 text-black dark:text-transparent dark:[-webkit-text-stroke:1px_rgba(255,255,255,0.3)] whitespace-nowrap`}>{t.hero.lastName}</h1>
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 -translate-x-[3px] z-0 text-transparent dark:text-cyan-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-all duration-300 whitespace-nowrap`}>{t.hero.lastName}</h1>
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 translate-x-[3px] z-0 text-transparent dark:text-red-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-all duration-300 whitespace-nowrap`}>{t.hero.lastName}</h1>
+              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 -translate-x-[3px] z-0 text-transparent dark:text-cyan-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>{t.hero.lastName}</h1>
+              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 translate-x-[3px] z-0 text-transparent dark:text-red-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>{t.hero.lastName}</h1>
             </div>
           </div>
           <div className="w-full text-left md:text-center pl-[15vw] md:pl-0">
             <div className="reveal-left md:reveal-center opacity-0 inline-block">
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase text-orange-600 dark:text-transparent dark:[-webkit-text-stroke:2px_#ec4899] opacity-100 dark:opacity-40 whitespace-nowrap`}>{t.hero.role[0]}<span className="hidden md:inline">.{t.hero.role[1]}</span></h1>
+              <h1 className={`${typographySize} md:text-hero-fit-wide font-black tracking-tighter uppercase text-orange-600 dark:text-transparent dark:[-webkit-text-stroke:2px_#ec4899] opacity-100 dark:opacity-40 whitespace-nowrap`}>{t.hero.role[0]}<span className="hidden md:inline">.{t.hero.role[1]}</span></h1>
             </div>
           </div>
           <div className="w-full text-right md:hidden">
@@ -176,15 +314,15 @@ export default function Hero() {
           </div>
           <div className="w-full flex justify-start relative md:pl-[20vw]">
              <div className="reveal-left opacity-0 inline-block relative group">
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase relative z-10 text-black dark:text-transparent dark:[-webkit-text-stroke:1px_rgba(255,255,255,0.3)] whitespace-nowrap`}>{t.hero.frontend}</h1>
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 -translate-x-[3px] z-0 text-transparent dark:text-cyan-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-all duration-300 whitespace-nowrap`}>{t.hero.frontend}</h1>
-              <h1 className={`${typographySize} font-black tracking-tighter uppercase absolute top-0 left-0 translate-x-[3px] z-0 text-transparent dark:text-red-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-all duration-300 whitespace-nowrap`}>{t.hero.frontend}</h1>
+              <h1 className={`${typographySize} md:text-hero-fit-indent font-black tracking-tighter uppercase relative z-10 text-black dark:text-transparent dark:[-webkit-text-stroke:1px_rgba(255,255,255,0.3)] whitespace-nowrap`}>{t.hero.frontend}</h1>
+              <h1 className={`${typographySize} md:text-hero-fit-indent font-black tracking-tighter uppercase absolute top-0 left-0 -translate-x-[3px] z-0 text-transparent dark:text-cyan-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>{t.hero.frontend}</h1>
+              <h1 className={`${typographySize} md:text-hero-fit-indent font-black tracking-tighter uppercase absolute top-0 left-0 translate-x-[3px] z-0 text-transparent dark:text-red-500/50 mix-blend-screen opacity-0 dark:opacity-100 transition-opacity duration-300 whitespace-nowrap`}>{t.hero.frontend}</h1>
             </div>
           </div>
           <div className="w-full text-right"><div className="reveal-right opacity-0 inline-block"><h1 className={`${typographySize} font-black tracking-tighter uppercase text-black dark:text-transparent dark:[-webkit-text-stroke:2px_#06b6d4] opacity-100 dark:opacity-20 whitespace-nowrap`}>{t.hero.developer}</h1></div></div>
         </div>
-        <div ref={imageWrapperRef} className="absolute left-[14px] md:left-[7em] bottom-[14vh] md:bottom-[10vh] w-[60vw] md:w-[16vw] h-[28vh] md:h-[30vh] z-20 pointer-events-auto will-change-transform opacity-0">
-          <div className="image-inner-container w-full h-full glass-engine overflow-hidden rounded-sm border border-black/10 dark:border-white/10 relative shadow-2xl bg-black/5 dark:bg-white/5">
+        <div ref={imageWrapperRef} className="absolute left-[14px] md:left-[7em] bottom-[14vh] md:bottom-[10vh] w-[60vw] md:w-[16vw] h-[28vh] md:h-[30vh] z-20 pointer-events-none opacity-0">
+          <div className="image-inner-container hero-card w-full h-full glass-engine overflow-hidden rounded-sm border border-black/10 dark:border-white/10 relative shadow-2xl bg-black/5 dark:bg-white/5">
             <img src="https://cdn.prod.website-files.com/684d06174bbd508a8dcbc859/68b22e2584f095b8afb03eec_Generated%20Image%20August%2029%2C%202025%20-%203_03PM.jpeg" alt="Portrait" className="w-full h-full object-cover" />
           </div>
           <div className="hero-detail mt-2 md:mt-4 flex items-center gap-3 opacity-0">
@@ -192,24 +330,43 @@ export default function Hero() {
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black dark:text-white opacity-70">{t.hero.detail}</span>
           </div>
         </div>
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 will-change-transform overflow-hidden md:overflow-visible">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden md:overflow-visible">
           <div ref={systemRef} className="relative w-full md:w-[400px] h-full md:h-[400px] flex items-center justify-center translate-z-0">
-            <div ref={planetRef} className="absolute rounded-full z-10 bg-black dark:bg-white shadow-2xl will-change-transform opacity-0" style={{ width: "120px", height: "120px" }} />
+            <div ref={planetRef} className="absolute rounded-full z-10 bg-black dark:bg-white shadow-2xl opacity-0" style={{ width: "120px", height: "120px" }} />
             <div className="orbit-ring orbit-1 opacity-0 absolute w-[280px] md:w-[420px] h-[280px] md:h-[420px] rounded-full border border-foreground/10">
-              <Satellite icon={Code} label={t.hero.satellites.react} className="top-0 left-1/2 -translate-x-1/2 -translate-y-1/2" nodeClass="node-1" />
-              <Satellite icon={Cpu} label={t.hero.satellites.nextjs} className="bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2" nodeClass="node-1" />
+              <Satellite id="react" icon={Code} label={t.hero.satellites.react} orbitClass="orbit-r1 o-react" open={openSat === "react"} onToggle={() => toggleSat("react")} />
+              <Satellite id="nextjs" icon={Cpu} label={t.hero.satellites.nextjs} orbitClass="orbit-r1 o-nextjs" open={openSat === "nextjs"} onToggle={() => toggleSat("nextjs")} />
             </div>
             <div className="orbit-ring orbit-2 opacity-0 absolute w-[450px] md:w-[580px] h-[450px] md:h-[580px] rounded-full border border-foreground/10">
-              <Satellite icon={Palette} label={t.hero.satellites.design} className="left-0 top-1/2 -translate-x-1/2 -translate-y-1/2" nodeClass="node-2" />
-              <Satellite icon={Layers} label={t.hero.satellites.uiux} className="right-0 top-1/2 translate-x-1/2 -translate-y-1/2" nodeClass="node-2" />
+              <Satellite id="design" icon={Palette} label={t.hero.satellites.design} orbitClass="orbit-r2 o-design" open={openSat === "design"} onToggle={() => toggleSat("design")} />
+              <Satellite id="uiux" icon={Layers} label={t.hero.satellites.uiux} orbitClass="orbit-r2 o-uiux" open={openSat === "uiux"} onToggle={() => toggleSat("uiux")} />
             </div>
             <div className="orbit-ring orbit-3 opacity-0 absolute w-[620px] md:w-[750px] h-[620px] md:h-[750px] rounded-full border border-foreground/10">
-              <Satellite icon={Sparkles} label={t.hero.satellites.motion} className="top-[15%] right-[15%]" nodeClass="node-3" />
-              <Satellite icon={Terminal} label={t.hero.satellites.backend} className="bottom-[15%] left-[15%]" nodeClass="node-3" />
+              <Satellite id="motion" icon={Sparkles} label={t.hero.satellites.motion} orbitClass="orbit-r3 o-motion" open={openSat === "motion"} onToggle={() => toggleSat("motion")} />
+              <Satellite id="backend" icon={Terminal} label={t.hero.satellites.backend} orbitClass="orbit-r3 o-backend" open={openSat === "backend"} onToggle={() => toggleSat("backend")} />
             </div>
           </div>
         </div>
       </div>
+      {openSat && OpenIcon && (
+        <div
+          ref={cardRef}
+          role="dialog"
+          aria-label={t.hero.satellites[openSat]}
+          className="pointer-events-none fixed left-0 top-0 z-50"
+        >
+          <div className={`chip-card ${SIDE_STEM[CARD_ANCHOR[openSat]]} theme-invert relative w-40 rounded-[10px] border border-foreground/10 p-3 shadow-[var(--card-shadow)] md:w-72 md:rounded-[12px] md:p-4`}>
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                <OpenIcon className="h-4 w-4 opacity-80" />
+                <span className="text-ui-label">{t.hero.satellites[openSat]}</span>
+              </span>
+              <span className="text-meta opacity-60 max-md:hidden">{t.hero.satellitesInfo[openSat].tag}</span>
+            </div>
+            <p className="text-body-xs mt-1.5 opacity-80 md:text-body-sm md:mt-2">{t.hero.satellitesInfo[openSat].text}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

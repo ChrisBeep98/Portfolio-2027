@@ -525,3 +525,108 @@
   letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── HERO · ajuste de pista (fit-to-track) ─────────────────────────────
+   Las dos líneas largas del Hero excedían su pista en desktop y se cortaban
+   por la derecha (censo 2026-10-21: "ARQUITECTO.DIGITAL" 1459px vs pista
+   1216px a 1440). Estos tokens limitan el tamaño firmado al ancho exacto de
+   su pista: min(firma, calc(vw − px)), donde el término px descuenta el
+   marco de 7em por lado y el término vw la fracción de pista disponible
+   (100% en la línea centrada, 80% en la línea con md:pl-[20vw]).
+   Coeficientes medidos en navegador (ES+EN), no inventados. */
+
+@utility text-hero-fit-wide {
+  font-size: min(clamp(2.5rem, 10.5vw, 9.6rem), calc(10.36vw - 23.21px));
+}
+
+@utility text-hero-fit-indent {
+  font-size: min(clamp(2.5rem, 10.5vw, 9.6rem), calc(11.23vw - 31.45px));
+}
+
+/* ── HERO · órbitas en el compositor (Hardware Symphony) ────────────────
+   El giro de anillos y el contragiro de nodos vivían en GSAP con un
+   gsap.set por frame (JS permanente, también fuera de pantalla). Ahora son
+   keyframes CSS (hilo de compositor) y se pausan cuando el track del Hero
+   sale del viewport (.orbits-paused lo toggla un IntersectionObserver). */
+
+/* ── HERO · pills del sistema solar (decisión 2026-10-21) ───────────────
+   Viaje orbital SIN rotación propia: offset-path desplaza el centro de la
+   pill por el círculo de su anillo y offset-rotate: 0deg la mantiene siempre
+   derecha. Pedido del director: las pills viajan en traslación, cero giro en
+   su propio eje. --o0 = ángulo de reposo de cada pill (reduced-motion). */
+
+@keyframes orbit-travel {
+  to { offset-distance: calc(var(--o0) + 100%); }
+}
+
+.orbit-pill {
+  position: absolute;
+  offset-rotate: 0deg;
+  offset-anchor: 50% 50%;
+  offset-distance: var(--o0);
+}
+
+.orbit-r1 { offset-path: circle(140px at 50% 50%); animation: orbit-travel 35s linear infinite; }
+.orbit-r2 { offset-path: circle(225px at 50% 50%); animation: orbit-travel 45s linear infinite reverse; }
+.orbit-r3 { offset-path: circle(310px at 50% 50%); animation: orbit-travel 55s linear infinite; }
+
+.o-react { --o0: 75%; }
+.o-nextjs { --o0: 25%; }
+.o-design { --o0: 50%; }
+.o-uiux { --o0: 0%; }
+.o-motion { --o0: 87.5%; }
+.o-backend { --o0: 12.5%; }
+
+@media (min-width: 768px) {
+  .orbit-r1 { offset-path: circle(210px at 50% 50%); }
+  .orbit-r2 { offset-path: circle(290px at 50% 50%); }
+  .orbit-r3 { offset-path: circle(375px at 50% 50%); }
+}
+
+.orbits-paused .orbit-r1,
+.orbits-paused .orbit-r2,
+.orbits-paused .orbit-r3 {
+  animation-play-state: paused;
+}
+
+/* Entrada de la chip-card expandida (click en pill): solo opacity/transform. */
+@keyframes chip-card-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.96); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.chip-card {
+  animation: chip-card-in 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Stem de hairline: la burbuja "sale" de su pill (lenguaje de hairlines 1px).
+   Una variante por anclaje; el stem mide el gap de 12px entre pill y card.
+   En todos los breakpoints: desde 2026-10-21 la burbuja móvil también sigue a su pill. */
+.chip-card::before {
+  content: "";
+  position: absolute;
+  background: color-mix(in srgb, var(--foreground) 30%, transparent);
+}
+.chip-stem-top::before { top: -12px; left: 50%; width: 1px; height: 12px; }
+.chip-stem-bottom::before { bottom: -12px; left: 50%; width: 1px; height: 12px; }
+.chip-stem-left::before { left: -12px; top: 50%; width: 12px; height: 1px; }
+.chip-stem-right::before { right: -12px; top: 50%; width: 12px; height: 1px; }
+.chip-stem-top-right::before { top: -12px; right: 1.75rem; width: 1px; height: 12px; }
+.chip-stem-bottom-left::before { bottom: -12px; left: 1.75rem; width: 1px; height: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-r1, .orbit-r2, .orbit-r3,
+  .chip-card {
+    animation: none;
+  }
+}
+
+/* La foto cubre la tarjeta del Hero por completo: el blur del glass-engine no
+   se ve y, en móvil, cuesta un repaint del backdrop por frame mientras la capa
+   se mueve en el Acto 2. Se apaga solo bajo 768px (desktop congelado). */
+@media (max-width: 767px) {
+  .hero-card.glass-engine {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

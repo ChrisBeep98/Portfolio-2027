@@ -22,6 +22,14 @@ export const dictionary = {
         uiux: "UI/UX",
         motion: "Motion",
         backend: "Backend"
+      },
+      satellitesInfo: {
+        react: { tag: "LIBRARY", text: "Component-driven UI with predictable state." },
+        nextjs: { tag: "FRAMEWORK", text: "App Router, static export, fast pages." },
+        design: { tag: "CRAFT", text: "Design systems, tokens, visual hierarchy." },
+        uiux: { tag: "METHOD", text: "Research, flows and prototypes that ship." },
+        motion: { tag: "MOTION", text: "GSAP choreography at 60fps. Scroll as narrative." },
+        backend: { tag: "API", text: "Node services, databases, integrations." }
       }
     },
     about: {
@@ -34,7 +42,11 @@ export const dictionary = {
       w18: "human-centered", w19: "solutions", w20: "and",
       w21: "digital", w22: "experiences", w23: "that", w24: "leave",
       w25: "a", w26: "lasting,", w27: "positive", w28: "and",
-      w29: "meaningful", w30: "visual", w31: "mark."
+      w29: "meaningful", w30: "visual", w31: "mark.",
+      tags: ["UX / UI", "Webflow Dev", "Bilingual"],
+      spec: "27 Years / Salento, COL",
+      portraitAlt: "Portrait of Christian Sandoval",
+      detailAlt: "Studio detail portrait"
     },
     story: {
       title: "MY STORY",
@@ -451,6 +463,14 @@ export const dictionary = {
         uiux: "UI/UX",
         motion: "Motion",
         backend: "Backend"
+      },
+      satellitesInfo: {
+        react: { tag: "LIBRERÍA", text: "UI por componentes con estado predecible." },
+        nextjs: { tag: "FRAMEWORK", text: "App Router, export estático, páginas veloces." },
+        design: { tag: "OFICIO", text: "Sistemas de diseño, tokens, jerarquía visual." },
+        uiux: { tag: "MÉTODO", text: "Investigación, flujos y prototipos que se envían." },
+        motion: { tag: "MOTION", text: "Coreografía GSAP a 60fps. Scroll como narrativa." },
+        backend: { tag: "API", text: "Servicios Node, bases de datos, integraciones." }
       }
     },
     about: {
@@ -463,7 +483,11 @@ export const dictionary = {
       w18: "la", w19: "creatividad", w20: "para", w21: "crear",
       w22: "soluciones", w23: "centradas", w24: "en", w25: "las",
       w26: "personas", w27: "y", w28: "experiencias", w29: "que",
-      w30: "dejen", w31: "huella."
+      w30: "dejen", w31: "huella.",
+      tags: ["UX / UI", "Webflow Dev", "Bilingual"],
+      spec: "27 Años / Salento, COL",
+      portraitAlt: "Retrato de Christian Sandoval",
+      detailAlt: "Retrato de detalle en estudio"
     },
     story: {
       title: "MI HISTORIA",
