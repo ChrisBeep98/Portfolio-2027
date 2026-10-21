@@ -33,7 +33,10 @@ yarn-error.log*
 next-env.d.ts
 
 # local-only — excluido del repo público (Portfolio-2027)
-/Graph-Design-Framework/
+# Graph-Design-Framework VIVO: YA NO ignorado -> el @ lo lee y se puede subir.
+# Solo se excluyen sus partes MUERTAS ( START-HERE.md: _archive = marcas muertas de OTROS clientes; references = inspiración ajena, no protocolo):
+/Graph-Design-Framework/_archive/
+/Graph-Design-Framework/references/
 /framework-old/
 /Agent-Features/
 /@@Agent-Features/
