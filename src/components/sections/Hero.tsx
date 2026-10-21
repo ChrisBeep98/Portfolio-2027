@@ -3,9 +3,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { useLanguage } from "@/context/LanguageContext";
-import { 
-  Code, 
+import {
+  EASE,
+  DUR,
+  STAGGER,
+  REVEAL,
+  PLANET,
+  REDUCED_MOTION_QUERY
+} from "@/lib/motion";
+import {
+  Code,
   Palette, 
   Cpu, 
   Layers, 
@@ -48,6 +57,16 @@ const SIDE_STEM: Record<Side, string> = {
   "top-right": "chip-stem-top-right",
   "bottom-left": "chip-stem-bottom-left"
 };
+
+// ── Config de motion del Hero (valores sin token canónico en motion.ts) ──
+const INTRO_HOLD = 0.5; // respiro antes del slam tipográfico del Acto 1
+const MOBILE_SLAM_PERCENT = 60; // salida lateral del texto en móvil (desktop usa REVEAL.slamPercent)
+const DETAIL_EXIT_Y = 50; // el hero-detail abandona hacia abajo
+const ORBITS_LIVE_AT = 0.3; // móvil: órbitas activas solo a partir de este progreso del scrub
+const AUTO_ADVANCE_DURATION = 2.2; // segundos del avance automático hasta la salida
+const AUTO_ADVANCE_MIN_SCROLL = 0.02; // fracción de viewport mínima para disparar el avance
+const AUTO_ADVANCE_DEAD_ZONE = 8; // px de holgura antes del final del track
+const AUTO_ADVANCE_IDLE_MS = 90; // ms de scroll quieto antes de disparar el avance (latencia)
 
 // Pill del sistema solar: button real (teclado/táctil) y hover que revela.
 // Viaja por offset-path sin rotar sobre su propio eje (offset-rotate: 0deg).
@@ -143,7 +162,7 @@ export default function Hero() {
 
   // EFECTO 1: INTRO Y SCROLL (Se ejecuta solo una vez al montar)
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -170,13 +189,13 @@ export default function Hero() {
       gsap.set(".hero-detail", { y: 20, opacity: 0 });
 
       // 2. Intro Acto 1 (Timeline de entrada)
-      const introTl = gsap.timeline({ defaults: { ease: "power4.out" } });
-      introTl.to({}, { duration: 0.5 }) 
-        .to(".reveal-left", { opacity: 1, xPercent: 0, duration: 1.5, stagger: 0.1 })
-        .to(".reveal-right", { opacity: 1, xPercent: 0, duration: 1.5, stagger: 0.1 }, "<")
-        .to(".reveal-center", { opacity: 1, y: 0, duration: 1.5 }, "<0.2")
-        .to(imageWrapperRef.current, { y: 0, opacity: 1, scale: 1, duration: 1.5 }, "-=1")
-        .to(".hero-detail", { y: 0, opacity: 1, stagger: 0.1, duration: 1 }, "-=1");
+      const introTl = gsap.timeline({ defaults: { ease: EASE.dramatic } });
+      introTl.to({}, { duration: INTRO_HOLD }) 
+        .to(".reveal-left", { opacity: 1, xPercent: 0, duration: DUR.signature, stagger: STAGGER.base })
+        .to(".reveal-right", { opacity: 1, xPercent: 0, duration: DUR.signature, stagger: STAGGER.base }, "<")
+        .to(".reveal-center", { opacity: 1, y: 0, duration: DUR.signature }, "<0.2")
+        .to(imageWrapperRef.current, { y: 0, opacity: 1, scale: 1, duration: DUR.signature }, "-=1")
+        .to(".hero-detail", { y: 0, opacity: 1, stagger: STAGGER.base, duration: DUR.base }, "-=1");
 
       // 3. Lógica de Recarga (Si ya hay scroll, matamos la intro rápido)
       const initialScroll = window.scrollY;
@@ -205,7 +224,7 @@ export default function Hero() {
             // track hacia la siguiente sección.
             if (self.progress < 0.12 || self.progress > 0.9) setOpenSat((cur) => (cur ? null : cur));
             if (isMobile) {
-              const live = self.progress > 0.3;
+              const live = self.progress > ORBITS_LIVE_AT;
               if (live !== orbitsState.live) {
                 orbitsState.live = live;
                 applyOrbits();
@@ -220,16 +239,21 @@ export default function Hero() {
       // escalar texto gigante con stroke fuerza re-raster de 6 capas por frame
       // (scroll lag real en dispositivo; headless no lo reproduce).
       scrollTl
-        .to(".reveal-left", { xPercent: isMobile ? -60 : -150, opacity: 0, ease: "none" }, 0)
-        .to(".reveal-right", { xPercent: isMobile ? 60 : 150, opacity: 0, ease: "none" }, 0)
-        .to(".reveal-center", { xPercent: isMobile ? -60 : -150, opacity: 0, ease: "none" }, 0);
+        .set(".reveal-left", { opacity: 1, xPercent: 0 }, 0)
+        .set(".reveal-right", { opacity: 1, xPercent: 0 }, 0)
+        .set(".reveal-center", { opacity: 1, xPercent: 0, y: 0 }, 0)
+        .set(".hero-detail", { opacity: 1, y: 0 }, 0)
+        .set(imageWrapperRef.current, { y: 0, opacity: 1, scale: 1 }, 0)
+        .to(".reveal-left", { xPercent: isMobile ? -MOBILE_SLAM_PERCENT : -REVEAL.slamPercent, opacity: 0, ease: EASE.none }, 0)
+        .to(".reveal-right", { xPercent: isMobile ? MOBILE_SLAM_PERCENT : REVEAL.slamPercent, opacity: 0, ease: EASE.none }, 0)
+        .to(".reveal-center", { xPercent: isMobile ? -MOBILE_SLAM_PERCENT : -REVEAL.slamPercent, opacity: 0, ease: EASE.none }, 0);
 
       // La imagen: en desktop conserva su geometría aprobada (crece 16vw→40vw).
       // En móvil terminaba invisible de todos modos, así que su recorrido de
       // left/bottom/width/height/clipPath (layout+paint por frame) se degrada
       // a transform/opacity — mismo destino, cero repaint (Hardware Symphony §2).
       if (isMobile) {
-        scrollTl.to(imageWrapperRef.current, { x: 0, y: 40, scale: 0.9, opacity: 0, ease: "power2.inOut", zIndex: 40 }, 0);
+        scrollTl.to(imageWrapperRef.current, { x: 0, y: 40, scale: 0.9, opacity: 0, ease: EASE.transition, zIndex: 40 }, 0);
       } else {
         scrollTl
           .to(imageWrapperRef.current, {
@@ -244,17 +268,17 @@ export default function Hero() {
             opacity: 1,
             scale: 1,
             clipPath: "inset(0% 0% 0% 0%)",
-            ease: "power2.inOut",
+            ease: EASE.transition,
             zIndex: 40
           }, 0)
-          .to(".image-inner-container", { borderRadius: "24px", ease: "power2.inOut" }, 0);
+          .to(".image-inner-container", { borderRadius: "24px", ease: EASE.transition }, 0);
       }
 
       scrollTl
-        .to(systemRef.current, { x: isMobile ? 0 : "20vw", opacity: 1, ease: "power2.inOut" }, 0)
-        .to(planetRef.current, { scale: isMobile ? 0.7 : 1.15, opacity: 1, ease: "power2.inOut" }, 0.1) 
-        .to(".orbit-ring", { scale: isMobile ? 0.6 : 0.8, opacity: 0.6, stagger: 0.05, ease: "power2.inOut" }, 0.1)
-        .to(".hero-detail", { opacity: 0, y: 50, ease: "none" }, 0);
+        .to(systemRef.current, { x: isMobile ? 0 : "20vw", opacity: 1, ease: EASE.transition }, 0)
+        .to(planetRef.current, { scale: isMobile ? PLANET.scaleMobile : PLANET.scaleDesktop, opacity: 1, ease: EASE.transition }, 0.1) 
+        .to(".orbit-ring", { scale: isMobile ? PLANET.ringScaleMobile : 0.8, opacity: PLANET.orbitOpacity, stagger: STAGGER.tight, ease: EASE.transition }, 0.1)
+        .to(".hero-detail", { opacity: 0, y: DETAIL_EXIT_Y, ease: EASE.transition }, 0);
 
       // Sincronización final
       ScrollTrigger.refresh();
@@ -278,6 +302,64 @@ export default function Hero() {
       orbitsIO.disconnect();
       containerRef.current?.classList.remove("orbits-paused");
       ctx.revert();
+    };
+  }, []);
+
+  // MOMENTO: un scroll corto dentro del Hero dispara un avance automático y
+  // fluido (ScrollToPlugin): hacia ABAJO hasta la salida (Acto 2) y hacia
+  // ARRIBA de vuelta al Acto 1. Detección con listener propio
+  // (AUTO_ADVANCE_IDLE_MS) en vez del `scrollEnd` global de ScrollTrigger
+  // (200ms fijos): menos latencia, mismo glide GSAP.
+  useEffect(() => {
+    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return;
+
+    let lastY = window.scrollY;
+    let idleTimer = 0;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      const direction = y > lastY ? 1 : y < lastY ? -1 : 0;
+      lastY = y;
+
+      window.clearTimeout(idleTimer);
+      if (direction === 0) return;
+
+      idleTimer = window.setTimeout(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const startY = window.scrollY + rect.top;
+        const endY = startY + rect.height - window.innerHeight;
+        const py = window.scrollY;
+
+        // Ya en el Acto 1 (o demasiado cerca): nada que avanzar en ninguna dirección.
+        if (py - startY < window.innerHeight * AUTO_ADVANCE_MIN_SCROLL) return;
+
+        if (direction === 1) {
+          // Hacia ABAJO: avanza solo hasta la salida.
+          if (py >= endY - AUTO_ADVANCE_DEAD_ZONE) return; // ya en la salida
+          gsap.to(window, {
+            duration: AUTO_ADVANCE_DURATION,
+            scrollTo: { y: endY, autoKill: true },
+            ease: EASE.inOut
+          });
+        } else {
+          // Hacia ARRIBA: vuelve solo al Acto 1.
+          if (py > endY) return; // ya pasó el Hero (About)
+          gsap.to(window, {
+            duration: AUTO_ADVANCE_DURATION,
+            scrollTo: { y: startY, autoKill: true },
+            ease: EASE.inOut
+          });
+        }
+      }, AUTO_ADVANCE_IDLE_MS);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(idleTimer);
     };
   }, []);
 
