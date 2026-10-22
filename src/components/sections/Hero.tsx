@@ -64,8 +64,8 @@ const MOBILE_SLAM_PERCENT = 60; // salida lateral del texto en móvil (desktop u
 const DETAIL_EXIT_Y = 50; // el hero-detail abandona hacia abajo
 const ORBITS_LIVE_AT = 0.3; // móvil: órbitas activas solo a partir de este progreso del scrub
 const AUTO_ADVANCE_DURATION = 2.2; // segundos del avance automático hasta la salida
-const AUTO_ADVANCE_MIN_SCROLL = 0.02; // fracción de viewport mínima para disparar el avance
-const AUTO_ADVANCE_DEAD_ZONE = 8; // px de holgura antes del final del track
+const AUTO_ADVANCE_BAND = { start: 0.15, end: 0.85 }; // progreso del track donde el imán actúa
+const AUTO_ADVANCE_COOLDOWN_MS = 2400; // ms de bloqueo tras disparar (cubre el viaje + margen)
 const AUTO_ADVANCE_IDLE_MS = 90; // ms de scroll quieto antes de disparar el avance (latencia)
 
 // Pill del sistema solar: button real (teclado/táctil) y hover que revela.
@@ -315,6 +315,7 @@ export default function Hero() {
 
     let lastY = window.scrollY;
     let idleTimer = 0;
+    let lastGlideAt = 0; // marca del último viaje del imán (cooldown anti-reversa)
 
     const onScroll = () => {
       const y = window.scrollY;
@@ -333,26 +334,23 @@ export default function Hero() {
         const endY = startY + rect.height - window.innerHeight;
         const py = window.scrollY;
 
-        // Ya en el Acto 1 (o demasiado cerca): nada que avanzar en ninguna dirección.
-        if (py - startY < window.innerHeight * AUTO_ADVANCE_MIN_SCROLL) return;
+        // Banda: fuera del centro del track el imán no actúa. Antes bastaba con
+        // ~20px de scroll desde el techo para que se lanzara el viaje completo, y
+        // un roce hacia arriba cerca de la salida devolvía al Acto 1 sin querer.
+        const progress = (py - startY) / (rect.height - window.innerHeight);
+        if (progress < AUTO_ADVANCE_BAND.start || progress > AUTO_ADVANCE_BAND.end) return;
 
-        if (direction === 1) {
-          // Hacia ABAJO: avanza solo hasta la salida.
-          if (py >= endY - AUTO_ADVANCE_DEAD_ZONE) return; // ya en la salida
-          gsap.to(window, {
-            duration: AUTO_ADVANCE_DURATION,
-            scrollTo: { y: endY, autoKill: true },
-            ease: EASE.inOut
-          });
-        } else {
-          // Hacia ARRIBA: vuelve solo al Acto 1.
-          if (py > endY) return; // ya pasó el Hero (About)
-          gsap.to(window, {
-            duration: AUTO_ADVANCE_DURATION,
-            scrollTo: { y: startY, autoKill: true },
-            ease: EASE.inOut
-          });
-        }
+        // Cooldown: ni mientras el viaje está en vuelo (2.2s) ni en sus ms
+        // siguientes. Antes, una corrección de 5px a mitad de viaje reviraba el
+        // recorrido entero hacia el otro acto.
+        if (Date.now() - lastGlideAt < AUTO_ADVANCE_COOLDOWN_MS) return;
+        lastGlideAt = Date.now();
+
+        gsap.to(window, {
+          duration: AUTO_ADVANCE_DURATION,
+          scrollTo: { y: direction === 1 ? endY : startY, autoKill: true },
+          ease: EASE.inOut
+        });
       }, AUTO_ADVANCE_IDLE_MS);
     };
 
