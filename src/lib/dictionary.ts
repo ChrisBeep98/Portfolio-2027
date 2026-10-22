@@ -6,6 +6,7 @@ export const dictionary = {
       work: "Work",
       about: "About",
       contact: "Contact",
+      cv: "My CV",
       projects: "Projects"
     },
     hero: {
@@ -447,6 +448,7 @@ export const dictionary = {
       work: "Proyectos",
       about: "Sobre Mí",
       contact: "Contacto",
+      cv: "Mi CV",
       projects: "Proyectos"
     },
     hero: {

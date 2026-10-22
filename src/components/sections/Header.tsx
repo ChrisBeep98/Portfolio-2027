@@ -17,8 +17,14 @@ if (typeof window !== "undefined") {
 const HEADER_REVEAL_AT_TOP = 10; // px: por debajo de aquí el header siempre visible
 const HEADER_INTENT = 24; // px de recorrido sostenido para cambiar de estado (anti-titileo)
 
+// ── CV: se sirve el PDF del idioma activo (el nombre lleva espacio → %20) ──
+const CV_FILES = {
+  en: "/Documentos%20Profesionales/Christian_Sandoval_CV_En.pdf",
+  es: "/Documentos%20Profesionales/Christian_Sandoval_CV_Es.pdf"
+} as const;
+
 export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isVisible, setIsVisible] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
@@ -190,6 +196,19 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
                   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-white rounded-full transition-all duration-300 ease-out group-hover:w-[44px] group-hover:h-[44px] -z-0 opacity-100" />
                 </Link>
               ))}
+
+              <a
+                href={CV_FILES[language]}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative group px-5 py-2 flex items-center justify-center"
+              >
+                <span className="font-mono uppercase tracking-[0.2em] text-white font-bold text-[11px] relative z-10 mix-blend-difference">
+                  {t.header.cv}
+                </span>
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-white rounded-full transition-all duration-300 ease-out group-hover:w-[44px] group-hover:h-[44px] -z-0 opacity-100" />
+              </a>
             </nav>
 
             <LanguageSwitch />
@@ -225,13 +244,26 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
                   setIsMenuOpen(false);
                 }
               }}
-              className={`menu-item block w-fit text-right ${index < navLinks.length - 1 ? "border-b border-foreground/20 pb-6" : ""}`}
+              className="menu-item block w-fit text-right border-b border-foreground/20 pb-6"
             >
               <span className="font-display font-black text-[14vw] leading-[0.85] uppercase tracking-tighter hover:opacity-50 transition-opacity duration-300">
                 {item.label}
               </span>
             </Link>
           ))}
+
+          <a
+            href={CV_FILES[language]}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsMenuOpen(false)}
+            className="menu-item block w-fit text-right"
+          >
+            <span className="font-display font-black text-[14vw] leading-[0.85] uppercase tracking-tighter hover:opacity-50 transition-opacity duration-300">
+              {t.header.cv}
+            </span>
+          </a>
         </nav>
 
         <div className="menu-footer mt-16 flex flex-col gap-8 relative z-10 w-full items-end">
