@@ -13,6 +13,10 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollToPlugin);
 }
 
+// ── Header: hide/show por scroll ──
+const HEADER_REVEAL_AT_TOP = 10; // px: por debajo de aquí el header siempre visible
+const HEADER_INTENT = 24; // px de recorrido sostenido para cambiar de estado (anti-titileo)
+
 export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
   const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState(true);
@@ -55,16 +59,30 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
       );
     }, headerRef);
 
+    // Oculta/muestra por dirección, pero con INTENCIÓN sostenida. Antes el umbral
+    // era un delta de 5px medido contra una referencia que solo avanzaba al
+    // cambiar de estado, así que cualquier acumulación de 6px en dirección
+    // contraria volvía a disparar el toggle: con un trackpad (deltas de 1-3px que
+    // la inercia alterna) el header entraba y salía en bucle — el titileo.
+    let intent = 0;
     const controlHeader = () => {
       const currentScrollY = window.scrollY;
-      const difference = currentScrollY - lastScrollY.current;
-      const tolerance = 5;
+      const delta = currentScrollY - lastScrollY.current;
+      lastScrollY.current = currentScrollY;
 
-      if (currentScrollY < 10) {
+      if (currentScrollY < HEADER_REVEAL_AT_TOP) {
+        intent = 0;
         setIsVisible(true);
-      } else if (Math.abs(difference) > tolerance) {
-        setIsVisible(difference < 0);
-        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      intent += delta;
+      if (intent > HEADER_INTENT) {
+        intent = 0;
+        setIsVisible(false);
+      } else if (intent < -HEADER_INTENT) {
+        intent = 0;
+        setIsVisible(true);
       }
     };
 
