@@ -1,5 +1,5 @@
 # Contexto del Proyecto: Christian Sandoval Portfolio 2026
-> **Última Actualización:** 20 de Octubre, 2026
+> **Última Actualización:** 22 de Octubre, 2026
 > **Estado:** Fase 1 (Migración de Framework) — Graph-Design-Framework adaptado desde Epicare; Lenis global activo; sistema tipográfico tokenizado; motion tokens en `src/lib/motion.ts`.
 > **Navegación:** Ver [`README.md`](./README.md) para el índice completo de archivos de contexto.
 
@@ -74,9 +74,16 @@ src/
 
 6. **[NUEVO] Refactor Hero + fix del Acto 1 (21 Oct 2026):**
     - **Bug (recarga + scroll rápido):** la intro (Acto 1) y el scrub (Acto 2) comparten elementos (`.reveal-*`, `.hero-detail`, imagen); los `.to()` del scrub capturan su start "lazy" al primer render. Al recargar + hacer scroll rápido antes de que termine la intro, capturaban las letras a medio salir y el Acto 1 ya no se restauraba al volver arriba. **Fix:** `scrollTl.set(...)` a posición 0 fija el estado visible del Acto 1 ANTES de que los `.to()` capturen su start (solo rinde al hacer scroll, no al montar → no pisa la intro). Track se mantiene 300vh, scrub intacto (no one-shot — el one-shot sigue QUEMADO).
-    - **Auto-avance (deseado por el director):** scroll corto HACIA ABAJO dentro del Hero → avanza solo hasta la salida, fluido. Implementado con GSAP: `ScrollTrigger.addEventListener("scrollStart"/"scrollEnd")` para detectar fin de scroll, y `gsap.to(window, { scrollTo: { y: endY, autoKill: true }, ease: EASE.inOut })`. **Bidireccional:** hacia ABAJO → salida; hacia ARRIBA → vuelve al Acto 1. Detección por listener propio (debounce `AUTO_ADVANCE_IDLE_MS` 50ms, menos latencia que el `scrollEnd` global de 200ms). `prefers-reduced-motion` lo desactiva.
+    - **Auto-avance «imán» (deseado por el director; recalibrado 22 Oct 2026 — ver entrada 7):** un recorrido real dentro del centro del Hero + pausa → lleva solo hasta el borde del acto (ABAJO → salida/Acto 2; ARRIBA → Acto 1). Detección por listener propio con asentamiento (`AUTO_ADVANCE_SETTLE_MS`). ⚠️ La implementación original (GSAP `ScrollToPlugin` con `autoKill: true`) quedó **sustituida**: producía jitter y viajes no deterministas. `prefers-reduced-motion` lo desactiva.
     - **Tokens:** Hero ahora consume `src/lib/motion.ts` (EASE/DUR/STAGGER/REVEAL/PLANET/REDUCED_MOTION_QUERY). Los valores sin token se nombraron como constantes UPPER_SNAKE en `Hero.tsx` (`INTRO_HOLD`, `MOBILE_SLAM_PERCENT`, `DETAIL_EXIT_Y`, `ORBITS_LIVE_AT`, `AUTO_ADVANCE_*`).
-    - `npx tsc --noEmit` y `pnpm build` verdes (7 rutas). **Pendiente:** verificación en dispositivo del fix de recarga + la sensación del auto-avance (headless no los prueba).
+    - `npx tsc --noEmit` y `pnpm build` verdes (7 rutas). **Pendiente:** verificación en dispositivo del fix de recarga (headless no lo prueba).
+
+7. **[NUEVO] Calibración del imán de scroll del Hero (22 Oct 2026):**
+    - **Síntoma reportado:** «a veces noto una mini reversa» + viajes no deseados al Acto 1/2. **Medido, no supuesto**, con el harness visual (`tools/visual-qa/trace-hero-autoadvance*.js`: tres trazas que muestrean `scrollY`/`velocity`/`direction`/`targetScroll` por frame sobre `evalpage.mjs`, desktop 1440×900 y móvil 390×844).
+    - **Antes (ambos viewports, determinista):** un roce de **20px** hacia abajo desde el techo commiteaba el viaje completo a la salida (`0 → 1800`); **40px** hacia arriba devolvían al Acto 1 (`1800 → 0`); una corrección de **5px** a mitad del viaje revertía todo (`399 → 0`); el handoff settle→viaje producía jitter de **±1…8px**; y `autoKill: true` mataba el viaje de forma **no determinista** (móvil completó el viaje, desktop no, con código idéntico).
+    - **Fix:** banda `AUTO_ADVANCE_BAND` [0.15, 0.85] + intención `AUTO_ADVANCE_INTENT` 0.07 de viewport de recorrido acumulado + **consumo único** con rearme + holgura 28px + asentamiento 140ms, y **Lenis como autoridad única** (`window.__lenis.scrollTo(target, { easing: gsap.parseEase(EASE.inOut), lock: false })`) en vez de ScrollToPlugin; la dirección se lee de `lenis.direction` (inmune al jitter ±1px). Respaldo GSAP `autoKill: false` si Lenis aún no montó. El asentamiento se reprograma **siempre** (antes un delta 0 cancelaba el timer y el disparo se perdía).
+    - **Después (medido, ambos viewports):** 20px abajo se queda en 20; 40px arriba se queda en 1760; la corrección de 5px se queda en ~403 (el usuario manda); inversiones **0** (antes 2-5); `tgtDiv` **0.5px** (antes 8-10px → confirma autoridad única). `npx tsc --noEmit` y `pnpm build` verdes (7 rutas). **Cero cambio de píxel:** el diff se limita al efecto del imán y a sus constantes.
+    - **Pendiente:** la *sensación* en dispositivo real (el harness mide trayectorias, no feel).
 
 ### Deuda conocida / drift detectado (censo 2026-10-20)
 - **Colores hardcodeados en componentes:** `bg-[#F2F2F0] dark:bg-[#050505]` (page.tsx wrapper, Marquee, About), `#0A0A0A/#FAF9F6` (Footer), `#E5E5E3/#0D0D0D` (Process) — candidatos a tokens semánticos en el próximo sweep (NO tocar sin protocolo).
@@ -84,3 +91,5 @@ src/
 - **Dependencia externa:** `noise-bg` carga SVG de `grainy-gradients.vercel.app` — self-host pendiente.
 - **Docs viejos vs código:** `framework-old` describía Process como "3D Cards"; real = acordeón editorial. ARCHITECTURE.md viejo dice Next 15 (real: 16) y referencia COMPONENT-SYSTEM.md (no existe).
 - **Púrpura `#a855f7`** documentado como acento de marca por censo — pendiente confirmación de dirección.
+- **`pnpm lint` NO es ejecutable (detectado 22 Oct 2026):** el script del `package.json` es `next lint`, comando eliminado en Next 16, y el repo no tiene config de ESLint (`eslint.config.*` / `.eslintrc*` inexistentes) → `Invalid project directory provided, no such directory: .../lint`. El checklist de entrega (§5 del `codebase-architecture-protocol`) pide `pnpm lint`: hoy no se puede cumplir. Candidatos: `eslint` + `eslint-config-next` o retirar el script del checklist. **No es un fallo de código del portfolio.**
+- **`git status`/`git diff` intermitentemente bloqueados en Windows (22 Oct 2026):** `ERROR_SHARING_VIOLATION` («El proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso») con el dev server o el build corriendo; `git rev-parse` sí funciona. Workaround: reintentar con la terminal quieta.

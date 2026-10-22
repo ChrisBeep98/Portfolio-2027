@@ -63,10 +63,14 @@ const INTRO_HOLD = 0.5; // respiro antes del slam tipográfico del Acto 1
 const MOBILE_SLAM_PERCENT = 60; // salida lateral del texto en móvil (desktop usa REVEAL.slamPercent)
 const DETAIL_EXIT_Y = 50; // el hero-detail abandona hacia abajo
 const ORBITS_LIVE_AT = 0.3; // móvil: órbitas activas solo a partir de este progreso del scrub
-const AUTO_ADVANCE_DURATION = 2.2; // segundos del avance automático hasta la salida
-const AUTO_ADVANCE_MIN_SCROLL = 0.02; // fracción de viewport mínima para disparar el avance
-const AUTO_ADVANCE_DEAD_ZONE = 8; // px de holgura antes del final del track
-const AUTO_ADVANCE_IDLE_MS = 90; // ms de scroll quieto antes de disparar el avance (latencia)
+
+// ── Imán de scroll del Hero (auto-advance): banda + intención + consumo único ──
+// Calibrado midiendo con tools/visual-qa/trace-hero-autoadvance*.js
+const AUTO_ADVANCE_DURATION = 2.0; // segundos del viaje hasta el borde del acto
+const AUTO_ADVANCE_INTENT = 0.07; // recorrido mínimo (fracción de viewport) para que el imán actúe
+const AUTO_ADVANCE_DEAD_ZONE = 28; // px de holgura en el borde (absorbe el jitter de Lenis)
+const AUTO_ADVANCE_SETTLE_MS = 140; // ms sin eventos de scroll para dar por hecho que el usuario soltó
+const AUTO_ADVANCE_BAND = { start: 0.15, end: 0.85 }; // progreso del track donde el imán actúa
 
 // Pill del sistema solar: button real (teclado/táctil) y hover que revela.
 // Viaja por offset-path sin rotar sobre su propio eje (offset-rotate: 0deg).
@@ -305,61 +309,140 @@ export default function Hero() {
     };
   }, []);
 
-  // MOMENTO: un scroll corto dentro del Hero dispara un avance automático y
-  // fluido (ScrollToPlugin): hacia ABAJO hasta la salida (Acto 2) y hacia
-  // ARRIBA de vuelta al Acto 1. Detección con listener propio
-  // (AUTO_ADVANCE_IDLE_MS) en vez del `scrollEnd` global de ScrollTrigger
-  // (200ms fijos): menos latencia, mismo glide GSAP.
+  // IMÁN DE SCROLL (auto-advance): un recorrido real dentro del centro del Hero,
+  // seguido de una pausa, lleva solo hasta el borde del acto (hacia ABAJO hasta
+  // la salida / Acto 2; hacia ARRIBA de vuelta al Acto 1).
+  //
+  // Reglas, calibradas midiendo con tools/visual-qa/trace-hero-autoadvance*.js:
+  // - Banda: fuera de AUTO_ADVANCE_BAND el imán no actúa → se puede descansar
+  //   cerca del Acto 1 y de la salida sin que nada arrastre (el scroll de 20px
+  //   desde el techo ya no commitea el viaje completo).
+  // - Intención: exige AUTO_ADVANCE_INTENT de recorrido en una sola dirección.
+  // - Consumo único: tras el viaje, o tras una interrupción, hace falta volver a
+  //   recorrer ese umbral → sin re-disparo y sin reversa al corregir 5px.
+  // - Autoridad única: el viaje lo conduce Lenis (`window.__lenis.scrollTo`).
+  //   Con ScrollToPlugin + `autoKill: true` había dos escritores sobre el mismo
+  //   eje: jitter de ±1-8px en el handoff y viajes muertos de forma no determinista.
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
     if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return;
 
+    // Lenis monta en un efecto PADRE (SmoothScrollProvider) y en React los
+    // efectos corren de hijo a padre: en el mount del Hero todavía no existe.
+    // Se lee perezosamente, nunca capturado una sola vez.
+    const lenis = () => window.__lenis;
+
+    let settleTimer = 0;
+    let flying = false; // el imán está viajando (ignoramos sus propios eventos)
+    let rearmed = true; // consumo único: false hasta recuperar el umbral
+    let travel = 0; // recorrido acumulado en la dirección actual
+    let travelDir: 1 | -1 = 1;
     let lastY = window.scrollY;
-    let idleTimer = 0;
+    let decisionAt = window.scrollY; // referencia para volver a armar el imán
+
+    const glideTo = (target: number) => {
+      flying = true;
+      rearmed = false;
+      travel = 0;
+      const done = () => {
+        flying = false;
+        decisionAt = window.scrollY;
+      };
+      const lenisInstance = lenis();
+      if (lenisInstance) {
+        lenisInstance.scrollTo(target, {
+          duration: AUTO_ADVANCE_DURATION,
+          easing: gsap.parseEase(EASE.inOut),
+          lock: false,
+          onComplete: done
+        });
+      } else {
+        // Respaldo si Lenis no montó (tramo entre el mount del Hero y el provider).
+        gsap.to(window, {
+          duration: AUTO_ADVANCE_DURATION,
+          scrollTo: { y: target, autoKill: false },
+          ease: EASE.inOut,
+          onComplete: done
+        });
+      }
+    };
+
+    const evaluate = () => {
+      if (flying) return;
+
+      const rect = container.getBoundingClientRect();
+      const startY = window.scrollY + rect.top;
+      const span = rect.height - window.innerHeight;
+      if (span <= 0) return;
+
+      const y = window.scrollY;
+      const intentPx = AUTO_ADVANCE_INTENT * window.innerHeight;
+
+      // Consumo único: el imán no vuelve a actuar hasta recuperar el umbral.
+      if (!rearmed) {
+        if (Math.abs(y - decisionAt) < intentPx) return;
+        rearmed = true;
+      }
+
+      const progress = (y - startY) / span;
+      if (progress < AUTO_ADVANCE_BAND.start || progress > AUTO_ADVANCE_BAND.end) return;
+      if (travel < intentPx) return;
+
+      const endY = startY + span;
+      if (travelDir === 1) {
+        if (y >= endY - AUTO_ADVANCE_DEAD_ZONE) return; // ya en la salida
+        glideTo(endY);
+      } else {
+        if (y <= startY + AUTO_ADVANCE_DEAD_ZONE) return; // ya en el Acto 1
+        glideTo(startY);
+      }
+    };
 
     const onScroll = () => {
       const y = window.scrollY;
-      const direction = y > lastY ? 1 : y < lastY ? -1 : 0;
+      const d = y - lastY;
       lastY = y;
 
-      window.clearTimeout(idleTimer);
-      if (direction === 0) return;
+      // El asentamiento se reprograma SIEMPRE, también con delta 0: antes ese
+      // `return` cancelaba el timer sin volver a programarlo y el disparo se
+      // perdía (una de las causas de que el imán fuera no determinista).
+      window.clearTimeout(settleTimer);
+      if (flying) return;
+      settleTimer = window.setTimeout(evaluate, AUTO_ADVANCE_SETTLE_MS);
 
-      idleTimer = window.setTimeout(() => {
-        const container = containerRef.current;
-        if (!container) return;
+      // Dirección desde Lenis cuando existe: suavizada, inmune al jitter de ±1px
+      // del handoff (un delta crudo invertido reiniciaba el recorrido acumulado).
+      const lenisInstance = lenis();
+      const dir: 1 | -1 | 0 = lenisInstance ? lenisInstance.direction : d > 0 ? 1 : d < 0 ? -1 : 0;
+      if (dir === 0) return;
 
-        const rect = container.getBoundingClientRect();
-        const startY = window.scrollY + rect.top;
-        const endY = startY + rect.height - window.innerHeight;
-        const py = window.scrollY;
+      if (dir === travelDir) travel += Math.abs(d);
+      else {
+        travelDir = dir;
+        travel = Math.abs(d);
+      }
+    };
 
-        // Ya en el Acto 1 (o demasiado cerca): nada que avanzar en ninguna dirección.
-        if (py - startY < window.innerHeight * AUTO_ADVANCE_MIN_SCROLL) return;
-
-        if (direction === 1) {
-          // Hacia ABAJO: avanza solo hasta la salida.
-          if (py >= endY - AUTO_ADVANCE_DEAD_ZONE) return; // ya en la salida
-          gsap.to(window, {
-            duration: AUTO_ADVANCE_DURATION,
-            scrollTo: { y: endY, autoKill: true },
-            ease: EASE.inOut
-          });
-        } else {
-          // Hacia ARRIBA: vuelve solo al Acto 1.
-          if (py > endY) return; // ya pasó el Hero (About)
-          gsap.to(window, {
-            duration: AUTO_ADVANCE_DURATION,
-            scrollTo: { y: startY, autoKill: true },
-            ease: EASE.inOut
-          });
-        }
-      }, AUTO_ADVANCE_IDLE_MS);
+    // Interrupción: cualquier input real corta el viaje y obliga a re-armar el
+    // imán (por eso una corrección de 5px ya no revierte el viaje completo).
+    const onUserInput = () => {
+      if (!flying) return;
+      flying = false;
+      travel = 0;
+      decisionAt = window.scrollY;
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("wheel", onUserInput, { passive: true });
+    window.addEventListener("touchstart", onUserInput, { passive: true });
+    window.addEventListener("keydown", onUserInput);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.clearTimeout(idleTimer);
+      window.removeEventListener("wheel", onUserInput);
+      window.removeEventListener("touchstart", onUserInput);
+      window.removeEventListener("keydown", onUserInput);
+      window.clearTimeout(settleTimer);
     };
   }, []);
 
