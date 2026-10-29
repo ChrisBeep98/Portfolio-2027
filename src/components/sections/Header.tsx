@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowUpRight, Instagram, Mail, MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, X, ChevronDown, Instagram, Mail, MessageCircle } from "lucide-react";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -33,6 +34,7 @@ const CV_FILES = {
 
 export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
   const { t, language } = useLanguage();
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
@@ -48,12 +50,15 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
   const projects = useMemo(() => buildProjects(t), [t]);
 
   const navLinks = [
+    { id: "home", label: t.header.home, href: "/" },
     { id: "work", label: t.header.work, href: "/#projects" },
     { id: "about", label: t.header.about, href: "/about" },
     { id: "contact", label: t.header.contact, href: "#footer", isContact: true }
   ];
 
-  // En móvil el slider de tarjetas sustituye al link monolítico de proyectos.
+  // Desktop conserva la nav shipped; en móvil el slider de tarjetas sustituye
+  // al link monolítico de proyectos y "Inicio" abre la lista.
+  const desktopLinks = navLinks.filter((item) => item.id !== "home");
   const menuLinks = navLinks.filter((item) => item.id !== "work");
 
   const socialLinks = [
@@ -172,6 +177,14 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Estando en la home, "Inicio" no navega: cierra el menú y sube al Acto 1.
+  const handleHomeClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== "/") return;
+    e.preventDefault();
+    setIsMenuOpen(false);
+    gsap.to(window, { duration: DUR.signature, scrollTo: { y: 0, autoKill: false }, ease: EASE.inOut });
+  };
+
   const handleLinkClick = (href: string, isContact: boolean = false) => {
     setIsMenuOpen(false);
 
@@ -206,7 +219,7 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
 
           <div className="header-right flex items-center gap-2 md:gap-10 opacity-0 ml-auto">
             <nav className="hidden md:flex items-center gap-2">
-              {navLinks.map((item) => (
+              {desktopLinks.map((item) => (
                 <Link 
                   key={item.label} 
                   href={item.href}
@@ -268,7 +281,9 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
                 key={item.id}
                 href={item.href}
                 onClick={(e) => {
-                  if (item.isContact) {
+                  if (item.id === "home") {
+                    handleHomeClick(e);
+                  } else if (item.isContact) {
                     e.preventDefault();
                     handleLinkClick(item.href, true);
                   } else {
@@ -301,14 +316,24 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
               Las miniaturas se montan desde la primera apertura del menú.
               `my-auto` lo centra en el aire libre y colapsa a 0 si no hay. */}
           <div className="menu-projects relative z-10 my-auto py-6">
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-[14px] scroll-px-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="menu-projects-label flex items-center justify-end gap-2 px-[14px] pb-2">
+              <span className="text-overline opacity-60">{t.header.workLabel}</span>
+              <ChevronDown size={14} className="opacity-60" aria-hidden="true" />
+            </div>
+            {/* Scroll 100% nativo del compositor, SIN snap: el rango real es
+                ~70px y el paso de tarjeta ~145px, así que los puntos de snap
+                quedaban fuera de rango y `mandatory` devolvía el gesto al
+                inicio ("a veces falla"). `touch-pan-x` entrega el gesto
+                horizontal al track sin negociar eje con el scroller vertical y
+                la capa propia evita repintar el panel al deslizar. */}
+            <div className="flex gap-3 overflow-x-auto overscroll-x-contain touch-pan-x px-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [transform:translateZ(0)]">
               {hasOpenedMenu &&
                 projects.map((project) => (
                   <Link
                     key={project.id}
                     href={project.link || "#"}
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-[34vw] max-w-36 shrink-0 snap-start transition-opacity duration-200 active:opacity-70"
+                    className="w-[34vw] max-w-36 shrink-0 snap-start"
                   >
                     <span className="block aspect-square w-full overflow-hidden rounded-[12px] border border-foreground/10">
                       <img
@@ -339,16 +364,6 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
                 </a>
               ))}
             </div>
-
-            <button
-              onClick={() => handleLinkClick("#footer", true)}
-              className="flex items-center gap-3 group"
-            >
-              <span className="font-mono uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Let's Talk</span>
-              <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ArrowUpRight size={18} />
-              </div>
-            </button>
           </div>
         </div>
       </div>

@@ -3,11 +3,13 @@ export type Language = 'en' | 'es';
 export const dictionary = {
   en: {
     header: {
+      home: "Home",
       work: "Work",
       about: "About",
       contact: "Contact",
       cv: "My CV",
-      projects: "Projects"
+      projects: "Projects",
+      workLabel: "Work"
     },
     hero: {
       firstName: "Christian",
@@ -445,11 +447,13 @@ export const dictionary = {
   },
   es: {
     header: {
+      home: "Inicio",
       work: "Proyectos",
       about: "Sobre Mí",
       contact: "Contacto",
       cv: "Mi CV",
-      projects: "Proyectos"
+      projects: "Proyectos",
+      workLabel: "Trabajos"
     },
     hero: {
       firstName: "Christian",
