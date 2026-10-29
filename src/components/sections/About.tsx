@@ -23,6 +23,8 @@ export default function About() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const loops: gsap.core.Tween[] = [];
+
     const ctx = gsap.context(() => {
       // Líneas decorativas
       gsap.from(".about-line", {
@@ -62,25 +64,37 @@ export default function About() {
         }
       });
 
-      // Rotaciones y pulsos suaves (GPU Optimized)
-      gsap.to(".about-accent-rotate", {
-        rotation: 360,
-        duration: 15,
-        repeat: -1,
-        ease: "none"
-      });
-
-      gsap.to(".about-accent-pulse", {
-        y: -10,
-        duration: 2.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
-      });
+      // Rotaciones y pulsos suaves (GPU Optimized). Se guardan para pausarlos
+      // cuando la sección sale del viewport: un loop infinito offscreen sigue
+      // escribiendo estilos y repintando en cada frame (Hardware Symphony §1).
+      loops.push(
+        gsap.to(".about-accent-rotate", {
+          rotation: 360,
+          duration: 15,
+          repeat: -1,
+          ease: "none"
+        }),
+        gsap.to(".about-accent-pulse", {
+          y: -10,
+          duration: 2.5,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        })
+      );
 
     }, sectionRef);
 
-    return () => ctx.revert();
+    const loopsIO = new IntersectionObserver(
+      ([entry]) => loops.forEach((loop) => loop.paused(!entry.isIntersecting)),
+      { rootMargin: "10% 0px" }
+    );
+    if (sectionRef.current) loopsIO.observe(sectionRef.current);
+
+    return () => {
+      loopsIO.disconnect();
+      ctx.revert();
+    };
   }, [t]);
 
   const content: ContentItem[] = [

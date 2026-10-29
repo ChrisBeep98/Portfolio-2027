@@ -25,10 +25,13 @@ export default function Footer() {
   };
 
   useEffect(() => {
-    // 1. Bulb Animation (Existing)
+    let bulbTl: gsap.core.Timeline | null = null;
+
+    // 1. Bulb Animation (Existing) — anima stop-color (paint puro, no se
+    // compone): nace pausada y solo corre cuando el footer entra en escena.
     if (bulbRef.current) {
-      const tl = gsap.timeline({ repeat: -1, yoyo: true });
-      tl.to("#bulb-stop-1", { attr: { "stop-color": "#FFA500" }, duration: 2, ease: "sine.inOut" })
+      bulbTl = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
+      bulbTl.to("#bulb-stop-1", { attr: { "stop-color": "#FFA500" }, duration: 2, ease: "sine.inOut" })
         .to("#bulb-stop-1", { attr: { "stop-color": "#2DD4BF" }, duration: 2, ease: "sine.inOut" })
         .to("#bulb-stop-1", { attr: { "stop-color": "#00D2FF" }, duration: 2, ease: "sine.inOut" })
         
@@ -74,7 +77,19 @@ export default function Footer() {
 
     }, footerRef);
 
-    return () => ctx.revert();
+    // El footer es fixed: su caja está siempre "en viewport" aunque la tape el
+    // contenido. La puerta real es el spacer que lo revela.
+    const bulbIO = new IntersectionObserver(
+      ([entry]) => bulbTl?.paused(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    if (triggerRef.current) bulbIO.observe(triggerRef.current);
+
+    return () => {
+      bulbIO.disconnect();
+      bulbTl?.kill();
+      ctx.revert();
+    };
   }, []);
 
   return (

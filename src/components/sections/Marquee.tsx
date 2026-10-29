@@ -14,6 +14,8 @@ export default function Marquee() {
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const stars: gsap.core.Tween[] = [];
+
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 768;
       
@@ -29,16 +31,28 @@ export default function Marquee() {
         }
       });
 
-      // Spinning Stars
-      gsap.to(".marquee-star", {
-        rotation: 360,
-        duration: 3,
-        repeat: -1,
-        ease: "none"
-      });
+      // Spinning Stars — infinito y casi siempre fuera de pantalla: pausado
+      // no escribe estilos (Hardware Symphony §1).
+      stars.push(
+        gsap.to(".marquee-star", {
+          rotation: 360,
+          duration: 3,
+          repeat: -1,
+          ease: "none"
+        })
+      );
     }, containerRef);
 
-    return () => ctx.revert();
+    const starsIO = new IntersectionObserver(
+      ([entry]) => stars.forEach((star) => star.paused(!entry.isIntersecting)),
+      { rootMargin: "10% 0px" }
+    );
+    if (containerRef.current) starsIO.observe(containerRef.current);
+
+    return () => {
+      starsIO.disconnect();
+      ctx.revert();
+    };
   }, []);
 
   return (

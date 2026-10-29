@@ -168,7 +168,6 @@ export default function Hero() {
       window.history.scrollRestoration = "manual";
     }
 
-    let refreshTimer = 0;
     const isMobile = window.innerWidth < 768;
 
     // Las órbitas (keyframes CSS) tienen dos puertas de apagado: fuera de
@@ -280,10 +279,10 @@ export default function Hero() {
         .to(".orbit-ring", { scale: isMobile ? PLANET.ringScaleMobile : 0.8, opacity: PLANET.orbitOpacity, stagger: STAGGER.tight, ease: EASE.transition }, 0.1)
         .to(".hero-detail", { opacity: 0, y: DETAIL_EXIT_Y, ease: EASE.transition }, 0);
 
-      // Sincronización final
-      ScrollTrigger.refresh();
-
-      refreshTimer = window.setTimeout(() => { ScrollTrigger.refresh(); }, 100);
+      // Una sola sincronización, cuando las fuentes ya asentaron. Antes había
+      // dos refreshes completos (inmediato + 100ms) dentro de la ventana de la
+      // intro: dos reflows de toda la página compitiendo con el slam.
+      document.fonts?.ready.then(() => ScrollTrigger.refresh());
     }, containerRef);
 
     applyOrbits();
@@ -298,7 +297,6 @@ export default function Hero() {
     if (containerRef.current) orbitsIO.observe(containerRef.current);
 
     return () => {
-      window.clearTimeout(refreshTimer);
       orbitsIO.disconnect();
       containerRef.current?.classList.remove("orbits-paused");
       ctx.revert();

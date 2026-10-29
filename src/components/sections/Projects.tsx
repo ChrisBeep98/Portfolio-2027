@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight } from "lucide-react";
+import SmartVideo from "@/components/ui/SmartVideo";
 import { useLanguage } from "@/context/LanguageContext";
 
 if (typeof window !== "undefined") {
@@ -255,9 +256,9 @@ function ProjectMedia({ project, isMobile = false, label = "View Case" }: { proj
     >
       <div className={`w-full h-full relative overflow-hidden ${isMobile ? '' : 'rounded-sm shadow-2xl'}`}>
         {project.video ? (
-          <video src={project.video} autoPlay muted loop playsInline className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <SmartVideo src={project.video} poster={project.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         ) : (
-          <img src={project.image} alt={project.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img src={project.image} alt={project.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         )}
         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
       </div>
