@@ -4,19 +4,21 @@ import { useEffect, useRef } from "react";
 
 /**
  * @description Vídeo decorativo con carga diferida real (Hardware Symphony §5).
- * `preload="none"` evita que el archivo se descargue al cargar la página y un
- * IntersectionObserver lo reproduce solo cuando entra en pantalla, pausándolo
- * al salir (ni red ni decodificación fuera de viewport). El poster se asigna
- * al acercarse, no antes, para no meter otra imagen en la ruta crítica.
+ * `preload="none"` evita descargarlo al cargar; el IntersectionObserver asigna
+ * el poster y bufferea al acercarse. En modo normal reproduce/pausa al entrar
+ * y salir; en `manual` solo prepara la carga y deja el play/pause al padre
+ * (el deck móvil solo reproduce la tarjeta acoplada).
  */
 export default function SmartVideo({
   src,
   poster,
   className,
+  manual = false,
 }: {
   src: string;
   poster?: string;
   className?: string;
+  manual?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -28,7 +30,14 @@ export default function SmartVideo({
       ([entry]) => {
         if (entry.isIntersecting) {
           if (poster && !video.poster) video.poster = poster;
-          void video.play().catch(() => {});
+          if (manual) {
+            if (video.preload !== "auto") {
+              video.preload = "auto";
+              video.load();
+            }
+          } else {
+            void video.play().catch(() => {});
+          }
         } else {
           video.pause();
         }
@@ -38,7 +47,7 @@ export default function SmartVideo({
 
     io.observe(video);
     return () => io.disconnect();
-  }, [poster]);
+  }, [poster, manual]);
 
   return (
     <video

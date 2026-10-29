@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowUpRight, Instagram, Mail, MessageCircle } from "lucide-react";
 import gsap from "gsap";
@@ -8,6 +8,8 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSwitch from "@/components/ui/LanguageSwitch";
 import { useLanguage } from "@/context/LanguageContext";
+import { buildProjects, menuThumb } from "@/lib/projects";
+import { DUR, EASE, REVEAL, STAGGER } from "@/lib/motion";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollToPlugin);
@@ -16,6 +18,12 @@ if (typeof window !== "undefined") {
 // ── Header: hide/show por scroll ──
 const HEADER_REVEAL_AT_TOP = 10; // px: por debajo de aquí el header siempre visible
 const HEADER_INTENT = 24; // px de recorrido sostenido para cambiar de estado (anti-titileo)
+
+// ── Menú móvil: panel de vidrio con margen, no full-bleed ──
+// Apertura reactiva (pedido del director, 2026-10-29): el panel entra YA con
+// blur mediante un fade corto de compositor (solo opacity: el área del
+// backdrop no cambia y el blur se cachea). La cortina clip-path desde arriba
+// quedó QUEMADA: dejaba ver el tinte sin vidrio y el blur asentándose después.
 
 // ── CV: se sirve el PDF del idioma activo (el nombre lleva espacio → %20) ──
 const CV_FILES = {
@@ -32,11 +40,21 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const tl = useRef<gsap.core.Timeline | null>(null);
 
+  // Las miniaturas del slider solo se montan desde la primera apertura: el
+  // panel vive en el DOM siempre (cerrado con visibility:hidden) y tres <img>
+  // remotos ahí dentro se descargarían en cada carga de página.
+  const [hasOpenedMenu, setHasOpenedMenu] = useState(false);
+
+  const projects = useMemo(() => buildProjects(t), [t]);
+
   const navLinks = [
-    { label: t.header.work, href: "/#projects" },
-    { label: t.header.about, href: "/about" },
-    { label: t.header.contact, href: "#footer", isContact: true }
+    { id: "work", label: t.header.work, href: "/#projects" },
+    { id: "about", label: t.header.about, href: "/about" },
+    { id: "contact", label: t.header.contact, href: "#footer", isContact: true }
   ];
+
+  // En móvil el slider de tarjetas sustituye al link monolítico de proyectos.
+  const menuLinks = navLinks.filter((item) => item.id !== "work");
 
   const socialLinks = [
     { 
@@ -104,49 +122,59 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
 
     const ctx = gsap.context(() => {
       if (isMenuOpen) {
-        gsap.set(menuRef.current, { visibility: "visible" });
+        // Fade corto de compositor (solo opacity): el panel entra YA con su
+        // blur y el cascade de contenido arranca en paralelo. Sin cortina y
+        // sin blur diferido — el director pidió reactividad con vidrio desde
+        // el primer frame.
         const tlOpen = gsap.timeline();
-        tlOpen.to(menuRef.current, {
-          clipPath: "inset(0% 0% 0% 0%)",
-          duration: 0.6,
-          ease: "power4.inOut"
-        })
-        .from(".menu-item", {
-          y: 60,
-          opacity: 0,
-          stagger: 0.1,
-          duration: 0.6,
-          ease: "power3.out"
-        }, "-=0.3")
-        .from(".menu-footer", {
-          y: 20,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.out"
-        }, "-=0.4");
+        tlOpen
+          .fromTo(menuRef.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: DUR.tap, ease: EASE.snap })
+          .from(".menu-item", {
+            y: REVEAL.meta,
+            opacity: 0,
+            stagger: STAGGER.tight,
+            duration: DUR.micro,
+            ease: EASE.out
+          }, 0)
+          .from(".menu-projects", {
+            y: REVEAL.meta,
+            opacity: 0,
+            duration: DUR.micro,
+            ease: EASE.out
+          }, "-=0.2")
+          .from(".menu-footer", {
+            y: REVEAL.meta,
+            opacity: 0,
+            duration: DUR.micro,
+            ease: EASE.snap
+          }, "-=0.2");
 
         document.body.style.overflow = "hidden";
+        // El panel ya no tapa la página (margen de 4px + vidrio): sin esto el
+        // fondo seguiría scrolleando detrás del menú y el blur re-muestrearía.
+        window.__lenis?.stop();
       } else {
-        const tlClose = gsap.timeline({
-          onComplete: () => {
-            gsap.set(menuRef.current, { visibility: "hidden" });
-          }
-        });
-        tlClose.to(menuRef.current, {
-          clipPath: "inset(0% 0% 100% 0%)",
-          duration: 0.5,
-          ease: "power4.inOut"
-        });
+        gsap.to(menuRef.current, { autoAlpha: 0, duration: DUR.tap, ease: EASE.accel });
         document.body.style.overflow = "";
+        window.__lenis?.start();
       }
     }, menuRef);
 
-    return () => ctx.revert();
+    return () => {
+      document.body.style.overflow = "";
+      window.__lenis?.start();
+      ctx.revert();
+    };
   }, [isMenuOpen]);
+
+  const toggleMenu = () => {
+    if (!isMenuOpen) setHasOpenedMenu(true);
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const handleLinkClick = (href: string, isContact: boolean = false) => {
     setIsMenuOpen(false);
-    
+
     if (isContact) {
       gsap.to(window, { duration: 1.5, scrollTo: "max", ease: "power4.inOut" });
     }
@@ -215,9 +243,10 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
             <ThemeToggle />
 
             {/* Mobile Menu Toggle - Absolute Far Right with minimal padding */}
-            <button 
+            <button
               className="flex md:hidden items-center justify-center text-white transition-all duration-300 cursor-pointer z-[110] ml-2"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={toggleMenu}
+              aria-expanded={isMenuOpen}
               aria-label="Toggle Menu"
             >
               {isMenuOpen ? <X size={28} strokeWidth={2} /> : <Menu size={28} strokeWidth={2} />}
@@ -226,70 +255,101 @@ export default function Header({ hideLogo = false }: { hideLogo?: boolean }) {
         </div>
       </header>
 
-      <div 
+      {/* ── Menú móvil: panel de vidrio flotante, con margen de 4px ── */}
+      <div
         ref={menuRef}
-        className="fixed inset-0 z-[90] bg-background text-foreground flex flex-col justify-center px-6 md:hidden"
-        style={{ clipPath: "inset(0% 0% 100% 0%)", visibility: "hidden" }}
+        className="menu-glass menu-glass-blur fixed inset-[4px] z-[90] flex flex-col overflow-hidden rounded-[28px] text-foreground md:hidden"
+        style={{ visibility: "hidden" }}
       >
-        <nav className="flex flex-col w-full relative z-10 gap-10 items-end">
-          {navLinks.map((item, index) => (
-            <Link
-              key={index}
-              href={item.href}
-              onClick={(e) => {
-                if (item.isContact) {
-                  e.preventDefault();
-                  handleLinkClick(item.href, true);
-                } else {
-                  setIsMenuOpen(false);
-                }
-              }}
-              className="menu-item block w-fit text-right border-b border-foreground/20 pb-6"
-            >
-              <span className="font-display font-black text-[14vw] leading-[0.85] uppercase tracking-tighter hover:opacity-50 transition-opacity duration-300">
-                {item.label}
-              </span>
-            </Link>
-          ))}
-
-          <a
-            href={CV_FILES[language]}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setIsMenuOpen(false)}
-            className="menu-item block w-fit text-right"
-          >
-            <span className="font-display font-black text-[14vw] leading-[0.85] uppercase tracking-tighter hover:opacity-50 transition-opacity duration-300">
-              {t.header.cv}
-            </span>
-          </a>
-        </nav>
-
-        <div className="menu-footer mt-16 flex flex-col gap-8 relative z-10 w-full items-end">
-          <div className="flex gap-3">
-            {socialLinks.map((social, idx) => (
-              <a 
-                key={idx} 
-                href={social.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className={`menu-social w-12 h-12 rounded-full border border-foreground/20 flex items-center justify-center text-foreground transition-all duration-300 ${social.color}`}
+        <div className="menu-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pt-24 pb-6">
+          <nav className="relative z-10 flex flex-col items-end gap-4 px-[14px]">
+            {menuLinks.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={(e) => {
+                  if (item.isContact) {
+                    e.preventDefault();
+                    handleLinkClick(item.href, true);
+                  } else {
+                    setIsMenuOpen(false);
+                  }
+                }}
+                className="menu-item block w-fit border-b border-foreground/20 pb-2 text-right"
               >
-                {social.icon}
-              </a>
+                <span className="text-display-sm block font-black uppercase transition-opacity duration-300 hover:opacity-50 active:opacity-60">
+                  {item.label}
+                </span>
+              </Link>
             ))}
+
+            <a
+              href={CV_FILES[language]}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMenuOpen(false)}
+              className="menu-item block w-fit border-b border-foreground/20 pb-2 text-right"
+            >
+              <span className="text-display-sm block font-black uppercase transition-opacity duration-300 hover:opacity-50 active:opacity-60">
+                {t.header.cv}
+              </span>
+            </a>
+          </nav>
+
+          {/* Slider de proyectos: scroll-snap nativo, cero JS de arrastre.
+              Las miniaturas se montan desde la primera apertura del menú.
+              `my-auto` lo centra en el aire libre y colapsa a 0 si no hay. */}
+          <div className="menu-projects relative z-10 my-auto py-6">
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-[14px] scroll-px-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {hasOpenedMenu &&
+                projects.map((project) => (
+                  <Link
+                    key={project.id}
+                    href={project.link || "#"}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-[34vw] max-w-36 shrink-0 snap-start transition-opacity duration-200 active:opacity-70"
+                  >
+                    <span className="block aspect-square w-full overflow-hidden rounded-[12px] border border-foreground/10">
+                      <img
+                        src={menuThumb(project.image)}
+                        alt=""
+                        aria-hidden="true"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                    <span className="text-h7 mt-2 block truncate">{project.title}</span>
+                  </Link>
+                ))}
+            </div>
           </div>
 
-          <button 
-            onClick={() => handleLinkClick("#footer", true)}
-            className="flex items-center gap-3 group"
-          >
-            <span className="font-mono uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Let's Talk</span>
-            <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center group-hover:scale-110 transition-transform">
-              <ArrowUpRight size={18} />
+          <div className="menu-footer relative z-10 flex flex-col items-end gap-6 px-[14px] pt-6">
+            <div className="flex gap-3">
+              {socialLinks.map((social, idx) => (
+                <a
+                  key={idx}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`menu-social w-12 h-12 rounded-full border border-foreground/20 flex items-center justify-center text-foreground transition-all duration-300 ${social.color}`}
+                >
+                  {social.icon}
+                </a>
+              ))}
             </div>
-          </button>
+
+            <button
+              onClick={() => handleLinkClick("#footer", true)}
+              className="flex items-center gap-3 group"
+            >
+              <span className="font-mono uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Let's Talk</span>
+              <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowUpRight size={18} />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </>

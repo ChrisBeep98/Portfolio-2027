@@ -115,6 +115,56 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  /* ── Menú móvil: Liquid Glass (2026-10-29) ──
+     Panel con margen de 4px (no full-bleed). Una sola capa de blur por
+     pantalla, como manda el Glass Engine, y blur DIFERIDO: la cortina de
+     apertura anima clip-path sobre el tinte y `.menu-glass-blur` entra cuando
+     el panel ya está quieto — animar backdrop-filter obligaría a re-muestrear
+     todo el fondo en cada frame del reveal.
+
+     Van como clase plana junto a `.glass-engine`, NO como `@utility`: con
+     `@utility` el build emitió únicamente `-webkit-backdrop-filter` y se comió
+     la declaración estándar (Chrome computaba `none`). Ninguna de las dos
+     necesita variantes `md:`/`dark:` — el tinte ya es bimodal vía `color-mix`
+     sobre `--background`/`--foreground`, y el blur lo alterna React. */
+  .menu-glass {
+    background: color-mix(in oklab, var(--background) 74%, transparent);
+    border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+    /* Filo superior de vidrio: el Glass Engine ya trabaja con blancos alpha.
+       En dark mode es el highlight; en light mode se funde con el papel. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .menu-glass-blur {
+    /* Solo la declaración estándar: el build añade `-webkit-` por su cuenta.
+       Escribir ambas hace que Lightning CSS descarte la estándar y Chrome se
+       queda sin blur (`.glass-engine` sigue el mismo patrón). */
+    backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  /* Viewports bajos (≤640px de alto): el menú comprime SOLO sus paddings y
+     gaps para que el CTA final no quede bajo el fold. La tipografía y el
+     tamaño de las tarjetas no cambian; a 844px este bloque no aplica. */
+  @media (max-height: 640px) {
+    .menu-scroll {
+      padding-bottom: 0.75rem;
+    }
+    .menu-scroll nav {
+      gap: 0.5rem;
+    }
+    .menu-scroll nav a {
+      padding-bottom: 0.25rem;
+    }
+    .menu-projects {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .menu-footer {
+      padding-top: 0.5rem;
+      gap: 1rem;
+    }
+  }
+
   .text-mono {
     @apply font-mono text-xs uppercase tracking-[0.2em] opacity-50;
   }
@@ -129,6 +179,29 @@
   .text-stroke-black {
     -webkit-text-stroke: 2px #000000;
   }
+}
+
+/* ============================================
+   MENÚ MÓVIL — LIQUID GLASS (2026-10-29)
+   Panel con margen de 4px (no full-bleed). Una sola capa de blur por
+   pantalla, como manda el Glass Engine, y blur DIFERIDO: la cortina de
+   apertura anima clip-path sobre el tinte y `menu-glass-blur` entra cuando
+   el panel ya está quieto. Animar backdrop-filter obligaría a re-muestrear
+   todo el fondo en cada frame del reveal — el coste que se midió y se evitó.
+   Top-level @utility para que las variantes funcionen (lección Epicare #120).
+   ============================================ */
+
+@utility menu-glass {
+  background: color-mix(in oklab, var(--background) 74%, transparent);
+  border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+  /* Filo superior de vidrio: el Glass Engine ya trabaja con blancos alpha.
+     En dark mode es el highlight; en light mode se funde con el papel. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+@utility menu-glass-blur {
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
 /* Custom Animations */
