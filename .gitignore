@@ -37,6 +37,8 @@ next-env.d.ts
 # Solo se excluyen sus partes MUERTAS ( START-HERE.md: _archive = marcas muertas de OTROS clientes; references = inspiración ajena, no protocolo):
 /Graph-Design-Framework/_archive/
 /Graph-Design-Framework/references/
+/Graph-Design-Framework/tools/visual-qa/*.png
+/_quarantine/
 /framework-old/
 /Agent-Features/
 /@@Agent-Features/

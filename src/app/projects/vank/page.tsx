@@ -132,14 +132,13 @@ export default function VankProject() {
                 <button 
                   key={item.id} 
                   onClick={() => scrollToSection(item.id)}
-                  className={`pointer-events-auto px-4 h-9 rounded-[4px] backdrop-blur-2xl transition-all duration-500 flex items-center gap-3 border ${
+                  className={`pointer-events-auto px-4 h-9 rounded-[4px] backdrop-blur-2xl transition-all duration-500 flex items-center border ${
                     activeSection === index 
                       ? "bg-foreground text-background border-foreground shadow-lg" 
                       : "bg-background/40 text-foreground border-foreground/10"
                   }`}
                 >
-                  <span className="font-mono text-[0.65em] opacity-50">0{index}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] whitespace-nowrap">{item.label}</span>
+                  <span className="text-[11px] font-semibold tracking-wide whitespace-nowrap capitalize">{item.label}</span>
                 </button>
               ))}
             </motion.div>
@@ -161,9 +160,8 @@ export default function VankProject() {
             <div className="relative pointer-events-auto flex flex-col">
               <div className="absolute left-[-1rem] w-[2px] h-5 bg-black dark:bg-white transition-all duration-500 ease-out" style={{ transform: `translateY(${activeSection * 2.25}rem)` }} />
               {navigationItems.map((item, index) => (
-                <button key={index} onClick={() => scrollToSection(item.id)} className={`text-left text-[12px] font-normal tracking-tight transition-all duration-300 block w-full pl-6 h-[2.25rem] flex items-center ${activeSection === index ? "opacity-100 text-foreground" : "opacity-30 hover:opacity-60 text-foreground"}`}>
-                  <span className="font-mono text-[0.8em] mr-3 opacity-50">0{index}</span>
-                  <span className="uppercase tracking-[0.1em]">{item.label}</span>
+                <button key={index} onClick={() => scrollToSection(item.id)} className={`text-left text-[13px] font-normal tracking-tight transition-all duration-300 block w-full pl-6 h-[2.25rem] flex items-center ${activeSection === index ? "opacity-100 text-foreground font-semibold" : "opacity-30 hover:opacity-60 text-foreground"}`}>
+                  <span className="tracking-wide capitalize">{item.label}</span>
                 </button>
               ))}
             </div>

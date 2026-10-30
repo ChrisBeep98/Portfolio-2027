@@ -52,7 +52,7 @@
 ## Ruta `/about`
 - Timeline default `power3.out`; Mask Reveals `clip-path inset` 1.5s/1.2s `power4.out`; salidas aceleradas `power2.in`. Detalle en `sections/about/context.md`.
 
-## Rutas `/projects/{vank,anyma,nevado}` — Case Studies (Individual Page Clones)
+## Rutas `/projects/{go-ams,vank,anyma,nevado}` — Case Studies (Individual Page Clones)
 Estructura base compartida (5 Actos):
 1. **Hero:** Mask Reveal — título `clip-path inset(0 0 100% 0)→0` + texto `y 100%→0`, 1.5s power4.out delay 0.5; subtítulo y40 1.2s power3.out delay 0.9; meta-reveal y20 0.8s stagger 0.05 power2.out delay 0.4.
 2. **Actos narrativos:** títulos por acto (`.acto{n}-title-mask/-text`) 1.2s stagger 0.1 power4.out.

@@ -124,6 +124,124 @@ export const dictionary = {
         payments: "Payments API"
       }
     },
+    goams: {
+      intro: {
+        back: "Projects",
+        title: "GO AMS",
+        tagline: "Designing a platform with a lot of challenges to solve.",
+        contextLabel: "Project Context",
+        contextDesc: "GO AMS is a platform for managing the day-to-day operations of an insurance agency. I handled the entire product design in Figma, from the design system to the screens, and prepared the handoff for the development team to implement.",
+        meta: {
+          role: "My Role",
+          role_val: "Product Designer · UX/UI",
+          scope: "Scope",
+          scope_val: "Product Design & Design System",
+          tools: "Tools",
+          tools_val: "Figma · CSS for handoff",
+          status: "Status",
+          status_val: "Shipped & in active use"
+        }
+      },
+      index: {
+        intro: "Intro",
+        acto01: "Project",
+        acto02: "Challenge",
+        acto03: "Product",
+        acto04: "System",
+        acto05: "Handoff",
+        acto06: "Result",
+        acto07: "Reflection"
+      },
+      acto01: {
+        label: "01",
+        title: ["The", "Project"],
+        titleMobile: ["The", "Project"],
+        lead: "A platform to manage everything that happens behind an insurance agency.",
+        paragraphs: [
+          "GO AMS brings together many daily operations of an insurance agency: managing agents, looking up clients, organizing documents, reviewing policies, and accessing various tools from a single place.",
+          "The platform also features a downline hierarchy, where certain users manage subordinate agents and configure specific permissions and components according to their role.",
+          "This meant the product had many moving pieces, where different user roles required distinct views and capabilities.",
+          "My responsibility was designing this entire experience in Figma, from visual foundations to every screen across the platform."
+        ]
+      },
+      acto02: {
+        label: "02",
+        title: ["The", "Challenge"],
+        titleMobile: ["The", "Challenge"],
+        lead: "There was massive amounts of data, numerous modules, and varied access tiers.",
+        paragraphs: [
+          "One of the greatest challenges was structuring heavy information architectures without letting the interface become overwhelming or confusing.",
+          "The system required dense data tables with extensive filters, in-depth agent and client profiles, documents, forms, notifications, and modular settings. Furthermore, role-based permissions allowed team leaders to toggle components for agents within their downline.",
+          "This wasn't simply about designing isolated screens. All these sections had to coexist within a coherent product ecosystem that maintained visual and operational logic.",
+          "Micro-details were vital. In data-dense platforms, typography, contrast ratios, spacing rhythm, and information hierarchy dictate how effortlessly users navigate each screen."
+        ]
+      },
+      acto03: {
+        label: "03",
+        title: ["Designing", "the Product"],
+        titleMobile: ["Designing", "the Product"],
+        lead: "I led the end-to-end product design in Figma.",
+        paragraphs: [
+          "I worked autonomously on the design of GO AMS, spanning from creating the design system to crafting every screen across the platform.",
+          "The scope encompassed authentication, the main analytics dashboard, downline management, agency resources, settings, notifications, client rosters, detail cards for agents and policyholders, document repositories, forms, and policy overview tables.",
+          "With so many distinct modules, preventing the product from feeling like an assemblage of fragmented interfaces was paramount.",
+          "I established cohesive visual patterns and reusable layout rules across the board. Every module felt like a natural part of a unified system, despite addressing distinct operational needs."
+        ]
+      },
+      acto04: {
+        label: "04",
+        title: ["Building", "the Design", "System"],
+        titleMobile: ["Building", "the Design", "System"],
+        lead: "Every new screen should be composed, not reinvented from scratch.",
+        paragraphs: [
+          "A cornerstone of the project was building a robust design system to serve as the unified foundation for the entire platform.",
+          "I defined tokenized color palettes, typography scales, spacing rules, and layout constraints. I engineered reusable UI components including buttons, inputs, tabs, iconography sets, data tables, and advanced filter bars.",
+          "I accounted for complete interactive states including hover, active, focus, and disabled, ensuring components felt tactile and predictable.",
+          "I structured design tokens for light and dark modes, specifying exact letter-spacing, line-heights, and responsive behavior.",
+          "This established visual parity across workflows and provided a future-proof foundation for the product to scale smoothly."
+        ]
+      },
+      acto05: {
+        label: "05",
+        title: ["From Figma", "to Development"],
+        titleMobile: ["From Figma", "to Development"],
+        lead: "Design needed to bridge cleanly into production code.",
+        paragraphs: [
+          "Once the UI design was finalized, I prepared a detailed handoff package for engineering.",
+          "Beyond standard Figma files, I provided production-ready CSS files with color and typography tokens, light/dark mode variables, optical letter-spacing, line-heights, and system specifications.",
+          "I wanted engineers to have concrete architectural rules rather than static pixels, accelerating implementation velocity and ensuring pixel-accurate results.",
+          "This was a critical milestone: turning design abstractions into a resilient, functioning software product."
+        ]
+      },
+      acto06: {
+        label: "06",
+        title: ["The", "Result"],
+        titleMobile: ["The", "Result"],
+        lead: "GO AMS is live in production and continuing to scale.",
+        paragraphs: [
+          "The platform launched successfully and handles everyday agency operations. The team continues shipping new features on top of the established design baseline.",
+          "What makes this project rewarding is its real-world trajectory: it didn't stay as a concept or prototype. It powers active daily workflows for real users.",
+          "The design system underpins this progress: structured components, tokens, and established layout patterns allow new features to be assembled rapidly without starting from scratch."
+        ]
+      },
+      acto07: {
+        label: "07",
+        title: ["Final", "Reflection"],
+        titleMobile: ["Final", "Reflection"],
+        lead: "Architecting the full product, not just painting screens.",
+        paragraphs: [
+          "GO AMS allowed me to direct virtually every layer of modern product design.",
+          "From information architecture and modular layouts to design tokens, component engineering, and technical handoff, I balanced high-craft aesthetics with strict production constraints.",
+          "It was an expansive undertaking with countless interconnected pieces. Crafting details at high resolution while laying down an enduring design foundation was the ultimate reward."
+        ]
+      },
+      footer: {
+        title: "I AM AVAILABLE",
+        subtitle: "ELEVATING YOUR DIGITAL EXPERIENCE",
+        email: "christiansandovaldesign@gmail.com",
+        copyright: "© 2026 CHRISTIAN SANDOVAL."
+      }
+    },
     vank: {
       intro: {
         back: "Projects",
@@ -566,6 +684,124 @@ export const dictionary = {
         adventure: "Aventura",
         branding: "Branding",
         payments: "Pasarela Pagos"
+      }
+    },
+    goams: {
+      intro: {
+        back: "Proyectos",
+        title: "GO AMS",
+        tagline: "Diseñando una plataforma con muchas cosas por resolver.",
+        contextLabel: "Contexto del proyecto",
+        contextDesc: "GO AMS es una plataforma para gestionar las operaciones del día a día de una agencia de seguros. Me encargué de todo el diseño del producto en Figma, desde el sistema de diseño hasta las pantallas, y preparé la entrega para que el equipo de desarrollo pudiera implementarlo.",
+        meta: {
+          role: "Mi rol",
+          role_val: "Product Designer · UX/UI",
+          scope: "Alcance",
+          scope_val: "Diseño de producto y design system",
+          tools: "Herramientas",
+          tools_val: "Figma · CSS para handoff",
+          status: "Estado",
+          status_val: "Implementado y en uso"
+        }
+      },
+      index: {
+        intro: "Intro",
+        acto01: "Proyecto",
+        acto02: "Reto",
+        acto03: "Producto",
+        acto04: "Sistema",
+        acto05: "Handoff",
+        acto06: "Resultado",
+        acto07: "Reflexión"
+      },
+      acto01: {
+        label: "01",
+        title: ["El", "Proyecto"],
+        titleMobile: ["El", "Proyecto"],
+        lead: "Una plataforma para gestionar todo lo que pasa detrás de una agencia de seguros.",
+        paragraphs: [
+          "GO AMS reúne muchas de las tareas que forman parte del día a día de una agencia de seguros: gestionar agentes, consultar clientes, organizar documentos, revisar pólizas y acceder a distintas herramientas desde un mismo lugar.",
+          "La plataforma también tiene una estructura de downline, en la que algunos usuarios tienen agentes a su cargo y pueden gestionar determinados accesos y componentes según su rol.",
+          "Eso hacía que el producto tuviera bastantes piezas y que no todos los usuarios necesitaran ver o hacer lo mismo.",
+          "Mi trabajo fue diseñar toda esa experiencia en Figma, desde las bases visuales hasta las pantallas que forman la plataforma."
+        ]
+      },
+      acto02: {
+        label: "02",
+        title: ["El", "Reto"],
+        titleMobile: ["El", "Reto"],
+        lead: "Había mucha información, muchos apartados y diferentes niveles de acceso.",
+        paragraphs: [
+          "Uno de los mayores retos fue encontrar la manera de organizar tanta información sin que la interfaz se volviera difícil de entender.",
+          "Había tablas con bastantes filtros, fichas detalladas de clientes y agentes, documentos, formularios, notificaciones y distintas áreas de configuración. Además, los permisos dependían del rol de cada usuario, y algunas personas podían activar o desactivar componentes para los agentes de su downline.",
+          "No se trataba simplemente de diseñar cada pantalla por separado. Tenía que conseguir que todas esas partes convivieran dentro del mismo producto y que la interfaz mantuviera una lógica visual consistente.",
+          "También había que prestar atención a los detalles más pequeños. Cuando una plataforma tiene tanta información, la tipografía, los contrastes, los espacios y la forma de presentar los datos influyen mucho en cómo se recorre cada pantalla."
+        ]
+      },
+      acto03: {
+        label: "03",
+        title: ["Diseñando", "el Producto"],
+        titleMobile: ["Diseñando", "el Producto"],
+        lead: "Me encargué de todo el diseño en Figma.",
+        paragraphs: [
+          "Trabajé de forma individual en el diseño de GO AMS, desde la creación del sistema de diseño hasta las diferentes pantallas de la plataforma.",
+          "El alcance incluía el login, el dashboard, la gestión de la downline, los recursos, la configuración, las notificaciones, la bandeja de clientes, las fichas de clientes y agentes, los documentos y los formularios, además de tablas para consultar pólizas y documentación.",
+          "Con tantas áreas, era importante que el producto no acabara pareciendo una suma de interfaces independientes.",
+          "Por eso, trabajé en mantener una misma línea visual y en establecer reglas que pudieran repetirse a lo largo de la plataforma. La idea era que los distintos apartados se sintieran parte del mismo sistema, aunque cada uno tuviera necesidades diferentes."
+        ]
+      },
+      acto04: {
+        label: "04",
+        title: ["Construyendo", "el Sistema", "de Diseño"],
+        titleMobile: ["Construyendo", "el Sistema", "de Diseño"],
+        lead: "No quería que cada pantalla tuviera que resolverse desde cero.",
+        paragraphs: [
+          "Una parte importante del proyecto fue crear un sistema de diseño que sirviera como base para toda la plataforma.",
+          "Definí los colores, la tipografía, los espaciados y las reglas visuales que se utilizarían en la interfaz. También construí los componentes necesarios para el producto, como botones, inputs, tabs, iconos, tablas y filtros.",
+          "No me quedé únicamente con su apariencia inicial. Preparé también estados como hover y active, para que los componentes contemplaran distintos momentos de interacción.",
+          "Además, organicé las variables para los modos claro y oscuro, junto con propiedades como el letter spacing y el line height.",
+          "Todo esto ayudaba a mantener una misma lógica visual en las diferentes pantallas y dejaba una base preparada para seguir trabajando sobre ella a medida que el producto creciera."
+        ]
+      },
+      acto05: {
+        label: "05",
+        title: ["De Figma", "a Desarrollo"],
+        titleMobile: ["De Figma", "a Desarrollo"],
+        lead: "El diseño también tenía que llegar bien preparado al equipo de desarrollo.",
+        paragraphs: [
+          "Una vez diseñado el producto, preparé la entrega para el equipo encargado de implementarlo.",
+          "Además de los archivos de Figma, entregué archivos CSS con los tokens de color y tipografía, las variables de los modos claro y oscuro, el espaciado entre letras, la altura de línea y otras especificaciones del sistema.",
+          "Quería que el equipo tuviera algo más que las pantallas como referencia. La idea era dejar definidas las reglas que había detrás del diseño para que la implementación fuera más ágil y fiel al resultado original.",
+          "Fue una parte clave del proceso, porque todo ese sistema visual tenía que funcionar fuera de Figma, dentro de un producto real."
+        ]
+      },
+      acto06: {
+        label: "06",
+        title: ["El", "Resultado"],
+        titleMobile: ["El", "Resultado"],
+        lead: "GO AMS está en producción y sigue creciendo.",
+        paragraphs: [
+          "La plataforma ya se lanzó y se utiliza en el día a día. El equipo continúa añadiendo funcionalidades a medida que el producto evoluciona.",
+          "Para mí, eso hace que el proyecto sea especialmente interesante: no se quedó en un conjunto de pantallas o en un prototipo. El diseño llegó a una plataforma real que sigue utilizándose y desarrollándose.",
+          "El sistema de diseño forma parte de ese trabajo. Tener componentes, variables y reglas definidas deja una base común sobre la que seguir construyendo nuevas partes del producto, en lugar de empezar cada vez desde cero."
+        ]
+      },
+      acto07: {
+        label: "07",
+        title: ["Reflexión", "Final"],
+        titleMobile: ["Reflexión", "Final"],
+        lead: "Diseñar el producto completo, no solo las pantallas.",
+        paragraphs: [
+          "GO AMS fue un proyecto en el que pude trabajar en prácticamente todas las capas del diseño de producto.",
+          "Desde organizar la interfaz y diseñar las distintas áreas de la plataforma hasta construir los componentes, definir las variables y preparar la entrega para desarrollo, tuve que pensar tanto en el resultado visual como en todo lo que hacía falta para llevarlo a producción.",
+          "Fue un proyecto amplio, con muchas piezas que tenían que encajar. Y precisamente eso fue lo que más me aportó: trabajar en un producto real, cuidar los detalles de cada pantalla y construir una base de diseño que pudiera seguir utilizándose mientras la plataforma evolucionaba."
+        ]
+      },
+      footer: {
+        title: "ESTOY DISPONIBLE",
+        subtitle: "ELEVANDO TU EXPERIENCIA DIGITAL",
+        email: "christiansandovaldesign@gmail.com",
+        copyright: "© 2026 CHRISTIAN SANDOVAL."
       }
     },
     vank: {

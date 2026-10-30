@@ -78,6 +78,14 @@ src/
     - **Tokens:** Hero ahora consume `src/lib/motion.ts` (EASE/DUR/STAGGER/REVEAL/PLANET/REDUCED_MOTION_QUERY). Los valores sin token se nombraron como constantes UPPER_SNAKE en `Hero.tsx` (`INTRO_HOLD`, `MOBILE_SLAM_PERCENT`, `DETAIL_EXIT_Y`, `ORBITS_LIVE_AT`, `AUTO_ADVANCE_*`).
     - `npx tsc --noEmit` y `pnpm build` verdes (7 rutas). **Pendiente:** verificación en dispositivo del fix de recarga + la sensación del auto-avance (headless no los prueba).
 
+7. **[NUEVO] Nuevo Case Study GO AMS + integración en Showcase (29 Oct 2026):**
+    - Case study `/projects/go-ams` creado bajo el patrón "Individual Page Clones": estructura de 8 secciones (Intro + 7 Actos: El Proyecto, El Reto, Diseñando el Producto, Sistema de Diseño, De Figma a Desarrollo, El Resultado, Reflexión Final).
+    - Liquid Sidebar Index con 8 enlaces sincronizados bidireccionalmente con ScrollTrigger y navegación vía ScrollToPlugin. Drawer móvil animado con Framer Motion.
+    - 12 imágenes WebP optimizadas en `public/go-ams/` desplegadas a lo largo de los actos (dashboards, downline, reporting, notificaciones, flujos de login/soporte/recursos/perfil, componentes y tokens del sistema de diseño, y especificaciones de handoff).
+    - Integración en el showcase (`src/lib/projects.ts`): GO AMS posicionado de 1º en el listado de proyectos. Unificado `Projects.tsx` sobre `buildProjects(t)` para consumo canónico en split-scroll desktop y deck móvil.
+    - Copy bilingüe integrado en `src/lib/dictionary.ts` (`goams`) bajo estricta Data Parity Rule (EN/ES) y tú neutro.
+    - Build verificado: `npx tsc --noEmit` y `pnpm build` verdes (8/8 rutas estáticas generadas).
+
 ### Deuda conocida / drift detectado (censo 2026-10-20)
 - **Colores hardcodeados en componentes:** `bg-[#F2F2F0] dark:bg-[#050505]` (page.tsx wrapper, Marquee, About), `#0A0A0A/#FAF9F6` (Footer), `#E5E5E3/#0D0D0D` (Process) — candidatos a tokens semánticos en el próximo sweep (NO tocar sin protocolo).
 - **Tailwind genéricos:** iconos acento de About usan `text-orange-500/purple-500/cyan-500/pink-500/yellow-500`.

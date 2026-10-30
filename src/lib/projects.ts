@@ -18,7 +18,7 @@ export interface Project {
 }
 
 /** Llave del diccionario que aporta título y descripción de cada pieza. */
-type ProjectCopyKey = "nevado" | "vank" | "anyma";
+type ProjectCopyKey = "goams" | "nevado" | "vank" | "anyma";
 
 type ProjectAsset = Omit<Project, "id" | "title" | "description"> & {
   copyKey: ProjectCopyKey;
@@ -31,6 +31,17 @@ type ProjectAsset = Omit<Project, "id" | "title" | "description"> & {
  * `sections/Header.tsx` (slider del menú móvil) — un solo listado, dos usos.
  */
 const PROJECT_ASSETS: ProjectAsset[] = [
+  {
+    copyKey: "goams",
+    category: "Product Design",
+    image: "/go-ams/login.webp",
+    lightBg: "#E5E5E5",
+    darkBg: "#171717",
+    accent: "#737373",
+    tags: ["Product Design", "Figma Design", "Design System"],
+    link: "/projects/go-ams",
+    github: "#",
+  },
   {
     copyKey: "nevado",
     category: "Adventure Platform",

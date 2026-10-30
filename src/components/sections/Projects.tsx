@@ -28,53 +28,7 @@ export default function Projects() {
   const desktopRightRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isDark, setIsDark] = useState(false);
 
-  const projects = useMemo<Project[]>(
-    () => [
-      {
-        id: 1,
-        title: t.nevado.intro.title,
-        category: "Adventure Platform",
-        description: t.nevado.intro.contextDesc,
-        image: "https://res.cloudinary.com/dnx0dmhq3/image/upload/v1770692621/Layout_4_a4k6ah.jpg",
-        video: "https://res.cloudinary.com/dnx0dmhq3/video/upload/v1770754632/chrome_4PFMYnDlsP_mejs5o.mp4",
-        lightBg: "#F0F9FF",
-        darkBg: "#0F172A",
-        accent: "#0EA5E9",
-        tags: ["Full Stack", "Payments API", "Branding"],
-        link: "/projects/nevado",
-        github: "#",
-      },
-      {
-        id: 2,
-        title: t.vank.intro.title,
-        category: "Fintech Platform",
-        description: t.vank.intro.contextDesc,
-        image: "https://cdn.prod.website-files.com/684d06174bbd508a8dcbc859/68acd98ffcf18c76db9ce92b_MacBook%20Air%20M4%20-%20Sky%20Blue-2.jpg",
-        video: "https://res.cloudinary.com/dnx0dmhq3/video/upload/v1770498001/684d06174bbd508a8dcbc859_68a02c4efff9efe6193d79dd_showcase_09-transcode_kezu6n.mp4",
-        lightBg: "#FEF08A",
-        darkBg: "#713F12",
-        accent: "#facc15",
-        tags: ["Strategy", "UI/UX Design", "Fintech"],
-        link: "/projects/vank",
-        github: "#",
-      },
-      {
-        id: 3,
-        title: t.anyma.intro.title,
-        category: "Sports Platform",
-        description: t.anyma.intro.contextDesc,
-        image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&h=800&fit=crop",
-        video: "https://res.cloudinary.com/dnx0dmhq3/video/upload/v1770737959/684d06174bbd508a8dcbc859_68afd4d547d4ac2e7cc5433f_showcase_anyma_02-transcode_mf3jez.mp4",
-        lightBg: "#DCFCE7",
-        darkBg: "#064E3B",
-        accent: "#22c55e",
-        tags: ["UI/UX Design", "Strategy", "Sports Tech"],
-        link: "/projects/anyma",
-        github: "#",
-      },
-    ],
-    [t]
-  );
+  const projects = useMemo(() => buildProjects(t), [t]);
 
   useEffect(() => {
     const checkTheme = () => setIsDark(document.documentElement.classList.contains("dark"));
