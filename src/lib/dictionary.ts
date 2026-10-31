@@ -130,7 +130,7 @@ export const dictionary = {
         title: "GO AMS",
         tagline: "Designing a platform with a lot of challenges to solve.",
         contextLabel: "Project Context",
-        contextDesc: "GO AMS is a platform for managing the day-to-day operations of an insurance agency. I handled the entire product design in Figma, from the design system to the screens, and prepared the handoff for the development team to implement.",
+        contextDesc: "End-to-end design for an insurance agency management platform, from the Figma design system to developer handoff.",
         meta: {
           role: "My Role",
           role_val: "Product Designer · UX/UI",
@@ -692,7 +692,7 @@ export const dictionary = {
         title: "GO AMS",
         tagline: "Diseñando una plataforma con muchas cosas por resolver.",
         contextLabel: "Contexto del proyecto",
-        contextDesc: "GO AMS es una plataforma para gestionar las operaciones del día a día de una agencia de seguros. Me encargué de todo el diseño del producto en Figma, desde el sistema de diseño hasta las pantallas, y preparé la entrega para que el equipo de desarrollo pudiera implementarlo.",
+        contextDesc: "Diseño integral de una plataforma para gestionar agencias de seguros, desde el sistema de diseño en Figma hasta el handoff de desarrollo.",
         meta: {
           role: "Mi rol",
           role_val: "Product Designer · UX/UI",
